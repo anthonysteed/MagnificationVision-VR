@@ -78,6 +78,17 @@ public class MagnifyingRect : MonoBehaviour
             }
         }
 
+        if (_isActive)
+        {
+            UpdateRotation();
+        }
+
     }
+
+    private void UpdateRotation()
+    {
+        _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
+    }
+
 }
 

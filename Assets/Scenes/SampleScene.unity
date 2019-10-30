@@ -257,7 +257,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _rectObject: {fileID: 1858522124}
-  _cameraDistance: 12
+  _cameraDistance: 8.01
   _magnifyingCamera: {fileID: 1759613730}
 --- !u!1001 &339461564
 PrefabInstance:
