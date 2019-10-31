@@ -18,6 +18,7 @@ public class HandleHands : MonoBehaviour
 
     [SerializeField, Tooltip("Position hands locally relative to player or world")]
     private bool _positionHandsLocally;
+
 #pragma warning restore 649
 
     private GameObject _leftHandGameObject;
@@ -46,8 +47,8 @@ public class HandleHands : MonoBehaviour
         // Update hands positions.
         if (_positionHandsLocally == true)
         {
-            _leftHandGameObject.transform.localPosition = InputTracking.GetLocalPosition(XRNode.LeftHand) - _cameraTransform.position;
-            _rightHandGameObject.transform.localPosition = InputTracking.GetLocalPosition(XRNode.RightHand) - _cameraTransform.position;
+            _leftHandGameObject.transform.localPosition = InputTracking.GetLocalPosition(XRNode.LeftHand);
+            _rightHandGameObject.transform.localPosition = InputTracking.GetLocalPosition(XRNode.RightHand);
 
             // Update hands rotation.
             _leftHandGameObject.transform.localRotation = InputTracking.GetLocalRotation(XRNode.LeftHand);

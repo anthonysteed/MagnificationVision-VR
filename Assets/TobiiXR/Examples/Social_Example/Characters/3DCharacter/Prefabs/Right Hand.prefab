@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 33980911897527286}
   - component: {fileID: 23900796875849382}
   - component: {fileID: 95706938171929874}
+  - component: {fileID: 114223928941228194}
   m_Layer: 0
   m_Name: Right Hand
   m_TagString: Hand
@@ -97,3 +98,15 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &114223928941228194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1867753511240446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dacaceb90d177524a927d8e288714c82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

@@ -1,0 +1,5 @@
+* adjust render texture width to distance between hands
+* set height statically
+* set rotation as facing vertically at start
+	* record hands' rotation at start RA0, RB0
+	* as average rotation of hands change (RA + RB) / 2, rotate rect by same amount (during each Update)
