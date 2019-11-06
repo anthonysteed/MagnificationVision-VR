@@ -29,8 +29,6 @@ public class MagnifyingRect : MonoBehaviour
     [SerializeField]
     private GameObject _debugCanvas;
 
-    private Camera _playerCamera;
-
     private Transform _playerTransform;
 
     private Transform _leftHand;
@@ -41,18 +39,14 @@ public class MagnifyingRect : MonoBehaviour
 
     private bool _isActive = false;
 
-    private Vector2 _lastTouchAxis = Vector2.zero;
-
     private float _zoomDistance = 0f;
 
     private void Awake()
     {
-        _playerCamera = Camera.main;
-        _playerTransform = _playerCamera.transform;
+        _playerTransform = Camera.main.transform;
         _debugText = _debugCanvas.GetComponentInChildren<Text>();
         _zoomDistance = _cameraDistance;
-        _rectObject.SetActive(false);
-        _debugCanvas.SetActive(false);
+        ToggleMagnification(false);
     }
 
     private bool AreHandsAlive()
@@ -60,11 +54,18 @@ public class MagnifyingRect : MonoBehaviour
         return _leftHand && _rightHand;
     }
 
+    private void ToggleMagnification(bool isEnabled)
+    {
+        _rectObject.SetActive(isEnabled);
+        _debugCanvas.gameObject.SetActive(isEnabled);
+        _isActive = isEnabled;
+    }
+
     public void OnHandConnectionChange(SteamVR_Behaviour_Pose pose, SteamVR_Input_Sources changedSource, bool isConnected)
     {
         if (isConnected)
         {
-            pose.GetComponent<Renderer>().enabled = true;
+            pose.GetComponentInChildren<Renderer>().enabled = true;
             if (changedSource == SteamVR_Input_Sources.LeftHand)
             {
                 _leftHand = pose.transform;
@@ -74,14 +75,15 @@ public class MagnifyingRect : MonoBehaviour
             }
         } else
         {
-            pose.GetComponent<Renderer>().enabled = false;
             if (changedSource == SteamVR_Input_Sources.LeftHand)
             {
                 _leftHand = null;
-            } else
+            } else if (changedSource == SteamVR_Input_Sources.RightHand)
             {
                 _rightHand = null;
             }
+            pose.GetComponentInChildren<Renderer>().enabled = false;
+            ToggleMagnification(false);
         }
 
     } 
@@ -91,23 +93,7 @@ public class MagnifyingRect : MonoBehaviour
         // If button pressed, enable the rect and move the camera
         if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.Any].stateDown && AreHandsAlive())
         {
-            if (!_isActive)
-            {
-                Debug.Log("Enabling magnification.");
-
-                // TODO: remove below
-                _rectObject.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
-                _rectObject.SetActive(true);
-                _debugCanvas.gameObject.SetActive(true);
-                _isActive = true;
-            }
-            else
-            {
-                Debug.Log("Disabling magnification.");
-                _rectObject.SetActive(false);
-                _debugCanvas.gameObject.SetActive(false);
-                _isActive = false;
-            }
+            ToggleMagnification(!_isActive);
         }
 
         if (_isActive)
@@ -120,17 +106,31 @@ public class MagnifyingRect : MonoBehaviour
 
     private void UpdateRectDimensions()
     {
-        Bounds leftHandBounds = _leftHand.GetComponent<Renderer>().bounds;
-        Bounds rightHandBounds = _rightHand.GetComponent<Renderer>().bounds;
-        float width = Vector3.Distance(leftHandBounds.center, rightHandBounds.center);
+        if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.Any].stateDown)
+        {
+            _rectObject.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
+        }
 
-        _rectObject.transform.position = (leftHandBounds.center + rightHandBounds.center) / 2f;
+        Transform leftTrans = _leftHand.transform;
+        Transform rightTrans = _rightHand.transform;
+        float width = Vector3.Distance(leftTrans.position, rightTrans.position);
+
         _rectObject.transform.localScale = new Vector3(width, _rectHeight, 1f);
-
-        Vector3 normal = Vector3.Cross(rightHandBounds.center - leftHandBounds.center, leftHandBounds.max - leftHandBounds.center);
-        //_rectObject.transform.rotation = transform.rotation * Quaternion.FromToRotation(_rectObject.transform.forward, normal);
-
         _magnifyingCamera.aspect = width / _rectHeight;
+        _rectObject.transform.position = (leftTrans.position + rightTrans.position) / 2f;
+
+        Vector3 upDir = leftTrans.forward + rightTrans.forward;
+        Vector3 rightDir = rightTrans.position - leftTrans.position;
+        if (Vector3.Angle(upDir, rightDir) < 1f)
+        {
+            ToggleMagnification(false);
+            return;
+        }
+
+        Vector3 normalDir = Vector3.Cross(rightDir, upDir);
+
+        _rectObject.transform.rotation = Quaternion.LookRotation(normalDir, upDir);
+
     }
 
     private void UpdateCameraTransform()
@@ -144,7 +144,7 @@ public class MagnifyingRect : MonoBehaviour
         ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
         if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
         {
-            _magnifyingCamera.fieldOfView += leftHandTouch.delta.y * _fovStep;
+            _magnifyingCamera.fieldOfView -= leftHandTouch.delta.y * _fovStep;
         }
 
         // Base zoom direction on head movement? Below is a bit nauseating
