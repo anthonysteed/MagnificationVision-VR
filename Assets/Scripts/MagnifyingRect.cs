@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR;
 
 public class MagnifyingRect : MonoBehaviour
 {
@@ -15,78 +17,101 @@ public class MagnifyingRect : MonoBehaviour
     private float _cameraDistance = 8f;
 
     [SerializeField]
-    private float _zoomStep = 1f;
+    private float _zoomStep = 5f;
 
     [SerializeField]
     private Camera _magnifyingCamera;
 
+    [SerializeField]
+    private GameObject _debugCanvas;
+
+    private Camera _playerCamera;
+
     private Transform _playerTransform;
 
-    private Transform[] _hands = new Transform[2];
+    private Transform _leftHand;
 
-    private bool _areHandsActive = false;
+    private Transform _rightHand;
+
+    private Text _debugText;
 
     private bool _isActive = false;
 
-    private float _lastTouchpadY = 0f;
+    private Vector2 _lastTouchAxis = Vector2.zero;
 
-    private float _zoomAmount = 0f;
+    private float _zoomDistance = 0f;
 
     private void Awake()
     {
-        _playerTransform = Camera.main.transform;
+        TrackedHand.OnHandAwake += OnHandAwake;
+        TrackedHand.OnHandLost += OnHandLost;
+
+        _playerCamera = Camera.main;
+        _playerTransform = _playerCamera.transform;
+        _debugText = _debugCanvas.GetComponentInChildren<Text>();
+        _zoomDistance = _cameraDistance;
         _rectObject.SetActive(false);
+        _debugCanvas.SetActive(false);
     }
 
-    private void Start()
+    private void OnDestroy()
     {
-        FindHands();
+        TrackedHand.OnHandAwake -= OnHandAwake;
+        TrackedHand.OnHandLost -= OnHandLost;
     }
 
-    private void FindHands()
+    private bool AreHandsAlive()
     {
-        int i = 0;
-        foreach (Transform child in this.transform)
+        return _leftHand && _rightHand;
+    }
+
+    private void OnHandLost(TrackedHand.Type type)
+    {
+        switch(type)
         {
-            if (child.CompareTag("Hand"))
-            {
-                _hands[i++] = child;
-            }
+            case TrackedHand.Type.LEFT_HAND:
+                _leftHand = null;
+                break;
+            case TrackedHand.Type.RIGHT_HAND:
+                _rightHand = null;
+                break;
         }
-        _areHandsActive = i == 2;
-        Debug.Log("Found " + i + " hands.");
+    }
+
+    private void OnHandAwake(Transform transform, TrackedHand.Type hand)
+    {
+        switch(hand)
+        {
+            case TrackedHand.Type.LEFT_HAND:
+                _leftHand = transform;
+                break;
+            case TrackedHand.Type.RIGHT_HAND:
+                _rightHand = transform;
+                break;
+        }
     }
 
     private void Update()
     {
-        Debug.Log("Touchpad axis: " + ControllerManager.Instance.GetTouchpadAxis());
-
-        if (ControllerManager.Instance.GetButtonPressDown(ControllerButton.Menu))
-        {
-            FindHands();
-        }
         // If button pressed, enable the rect and move the camera
-        else if (ControllerManager.Instance.GetButtonPressDown(ControllerButton.Trigger) && _areHandsActive)
+        if (ControllerManager.Instance.GetButtonPressDown(ControllerButton.Trigger) && AreHandsAlive())
         {
-            if (_isActive)
+            if (!_isActive)
             {
-                Debug.Log("Disabling magnification.");
-                _rectObject.SetActive(false);
-                _isActive = false;
-            }
-            else
-            {
-                if (!_areHandsActive)
-                {
-                    FindHands();
-                    return;
-                }
                 Debug.Log("Enabling magnification.");
 
                 // TODO: remove below
                 _rectObject.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
                 _rectObject.SetActive(true);
+                _debugCanvas.gameObject.SetActive(true);
                 _isActive = true;
+            }
+            else
+            {
+                Debug.Log("Disabling magnification.");
+                _rectObject.SetActive(false);
+                _debugCanvas.gameObject.SetActive(false);
+                _isActive = false;
             }
         }
 
@@ -94,13 +119,14 @@ public class MagnifyingRect : MonoBehaviour
         {
             UpdateRectDimensions();
             UpdateCameraTransform();
+            UpdateDebugText();
         }
     }
 
     private void UpdateRectDimensions()
     {
-        Bounds leftHandBounds = _hands[0].GetComponent<Renderer>().bounds;
-        Bounds rightHandBounds = _hands[1].GetComponent<Renderer>().bounds;
+        Bounds leftHandBounds = _leftHand.GetComponent<Renderer>().bounds;
+        Bounds rightHandBounds = _rightHand.GetComponent<Renderer>().bounds;
         float width = Vector3.Distance(leftHandBounds.center, rightHandBounds.center);
 
         _rectObject.transform.position = (leftHandBounds.center + rightHandBounds.center) / 2f;
@@ -110,28 +136,33 @@ public class MagnifyingRect : MonoBehaviour
         //_rectObject.transform.rotation = transform.rotation * Quaternion.FromToRotation(_rectObject.transform.forward, normal);
 
         _magnifyingCamera.aspect = width / _rectHeight;
-
-        // SetRenderTextureAspect(Mathf.RoundToInt(width), Mathf.RoundToInt(_rectHeight));
-    }
-
-    private void SetRenderTextureAspect(int width, int height)
-    {
-        RenderTexture renderTexture = new RenderTexture(width, height, 0);
-        _magnifyingCamera.targetTexture = renderTexture;
     }
 
     private void UpdateCameraTransform()
     {
-        // Each 0.1 unit difference in touchpad y is one zoom step
-        float currentTouchPadY = ControllerManager.Instance.GetTouchpadAxis().y;
-        if (_lastTouchpadY != 0f && currentTouchPadY != 0f)
+        Vector2 currentTouchAxis = ControllerManager.Instance.GetTouchpadAxis();
+        if (_lastTouchAxis.y != 0f && currentTouchAxis.y != 0f)
         {
-            _zoomAmount += (currentTouchPadY - _lastTouchpadY) * 10f * _zoomStep;
+            _zoomDistance += (currentTouchAxis.y - _lastTouchAxis.y) * _zoomStep;
         }
-        _lastTouchpadY = currentTouchPadY;
+        if (_lastTouchAxis.x != 0f && currentTouchAxis.x != 0f)
+        {
+            _magnifyingCamera.fieldOfView += (currentTouchAxis.x - _lastTouchAxis.x);
+        }
+        _lastTouchAxis = currentTouchAxis;
 
-        _magnifyingCamera.transform.position = _rectObject.transform.position + _rectObject.transform.forward * (_cameraDistance + _zoomAmount);
+        // Base zoom direction on head movement? Below is a bit nauseating
+        // _magnifyingCamera.transform.position = _rectObject.transform.position + _playerTransform.forward * (_cameraDistance + _zoomAmount);
+
+        _magnifyingCamera.transform.position = _rectObject.transform.position + _rectObject.transform.forward * _zoomDistance;
         _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
+    }
+
+    private void UpdateDebugText()
+    {
+        _debugCanvas.transform.position = _rectObject.transform.position;
+        _debugCanvas.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
+        _debugText.text = "Zoom distance: " + _zoomDistance + "\nFOV: " + _magnifyingCamera.fieldOfView;
     }
 
 }

@@ -13,7 +13,8 @@ GameObject:
   - component: {fileID: 23900796875849382}
   - component: {fileID: 95706938171929874}
   - component: {fileID: 114223928941228194}
-  m_Layer: 0
+  - component: {fileID: 114598644965971976}
+  m_Layer: 9
   m_Name: Right Hand
   m_TagString: Hand
   m_Icon: {fileID: 0}
@@ -110,3 +111,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dacaceb90d177524a927d8e288714c82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &114598644965971976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1867753511240446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3273946ce0270b4c88c0fa33913540f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _type: 1
