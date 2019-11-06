@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR;
+using Valve.VR;
 
 public class MagnifyingRect : MonoBehaviour
 {
@@ -18,6 +19,9 @@ public class MagnifyingRect : MonoBehaviour
 
     [SerializeField]
     private float _zoomStep = 5f;
+
+    [SerializeField]
+    private float _fovStep = 5f;
 
     [SerializeField]
     private Camera _magnifyingCamera;
@@ -43,9 +47,6 @@ public class MagnifyingRect : MonoBehaviour
 
     private void Awake()
     {
-        TrackedHand.OnHandAwake += OnHandAwake;
-        TrackedHand.OnHandLost += OnHandLost;
-
         _playerCamera = Camera.main;
         _playerTransform = _playerCamera.transform;
         _debugText = _debugCanvas.GetComponentInChildren<Text>();
@@ -54,47 +55,41 @@ public class MagnifyingRect : MonoBehaviour
         _debugCanvas.SetActive(false);
     }
 
-    private void OnDestroy()
-    {
-        TrackedHand.OnHandAwake -= OnHandAwake;
-        TrackedHand.OnHandLost -= OnHandLost;
-    }
-
     private bool AreHandsAlive()
     {
         return _leftHand && _rightHand;
     }
 
-    private void OnHandLost(TrackedHand.Type type)
+    public void OnHandConnectionChange(SteamVR_Behaviour_Pose pose, SteamVR_Input_Sources changedSource, bool isConnected)
     {
-        switch(type)
+        if (isConnected)
         {
-            case TrackedHand.Type.LEFT_HAND:
+            pose.GetComponent<Renderer>().enabled = true;
+            if (changedSource == SteamVR_Input_Sources.LeftHand)
+            {
+                _leftHand = pose.transform;
+            } else if (changedSource == SteamVR_Input_Sources.RightHand)
+            {
+                _rightHand = pose.transform;
+            }
+        } else
+        {
+            pose.GetComponent<Renderer>().enabled = false;
+            if (changedSource == SteamVR_Input_Sources.LeftHand)
+            {
                 _leftHand = null;
-                break;
-            case TrackedHand.Type.RIGHT_HAND:
+            } else
+            {
                 _rightHand = null;
-                break;
+            }
         }
-    }
 
-    private void OnHandAwake(Transform transform, TrackedHand.Type hand)
-    {
-        switch(hand)
-        {
-            case TrackedHand.Type.LEFT_HAND:
-                _leftHand = transform;
-                break;
-            case TrackedHand.Type.RIGHT_HAND:
-                _rightHand = transform;
-                break;
-        }
-    }
+    } 
 
     private void Update()
     {
         // If button pressed, enable the rect and move the camera
-        if (ControllerManager.Instance.GetButtonPressDown(ControllerButton.Trigger) && AreHandsAlive())
+        if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.Any].stateDown && AreHandsAlive())
         {
             if (!_isActive)
             {
@@ -140,16 +135,17 @@ public class MagnifyingRect : MonoBehaviour
 
     private void UpdateCameraTransform()
     {
-        Vector2 currentTouchAxis = ControllerManager.Instance.GetTouchpadAxis();
-        if (_lastTouchAxis.y != 0f && currentTouchAxis.y != 0f)
+        ISteamVR_Action_Vector2 rightHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand];
+        if (rightHandTouch.axis.y != 0f && rightHandTouch.lastAxis.y != 0f)
         {
-            _zoomDistance += (currentTouchAxis.y - _lastTouchAxis.y) * _zoomStep;
+            _zoomDistance += rightHandTouch.delta.y * _zoomStep;
+
         }
-        if (_lastTouchAxis.x != 0f && currentTouchAxis.x != 0f)
+        ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
+        if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
         {
-            _magnifyingCamera.fieldOfView += (currentTouchAxis.x - _lastTouchAxis.x);
+            _magnifyingCamera.fieldOfView += leftHandTouch.delta.y * _fovStep;
         }
-        _lastTouchAxis = currentTouchAxis;
 
         // Base zoom direction on head movement? Below is a bit nauseating
         // _magnifyingCamera.transform.position = _rectObject.transform.position + _playerTransform.forward * (_cameraDistance + _zoomAmount);
