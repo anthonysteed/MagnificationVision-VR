@@ -106,11 +106,6 @@ public class MagnifyingRect : MonoBehaviour
 
     private void UpdateRectDimensions()
     {
-        if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.Any].stateDown)
-        {
-            _rectObject.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
-        }
-
         Transform leftTrans = _leftHand.transform;
         Transform rightTrans = _rightHand.transform;
         float width = Vector3.Distance(leftTrans.position, rightTrans.position);
@@ -128,9 +123,7 @@ public class MagnifyingRect : MonoBehaviour
         }
 
         Vector3 normalDir = Vector3.Cross(rightDir, upDir);
-
         _rectObject.transform.rotation = Quaternion.LookRotation(normalDir, upDir);
-
     }
 
     private void UpdateCameraTransform()
@@ -144,14 +137,15 @@ public class MagnifyingRect : MonoBehaviour
         ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
         if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
         {
-            _magnifyingCamera.fieldOfView -= leftHandTouch.delta.y * _fovStep;
+            _magnifyingCamera.fieldOfView += leftHandTouch.delta.y * _fovStep;
         }
 
         // Base zoom direction on head movement? Below is a bit nauseating
         // _magnifyingCamera.transform.position = _rectObject.transform.position + _playerTransform.forward * (_cameraDistance + _zoomAmount);
 
         _magnifyingCamera.transform.position = _rectObject.transform.position + _rectObject.transform.forward * _zoomDistance;
-        _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
+        // _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
+        _magnifyingCamera.transform.rotation = _rectObject.transform.rotation;
     }
 
     private void UpdateDebugText()
