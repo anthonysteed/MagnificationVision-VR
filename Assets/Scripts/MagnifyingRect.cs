@@ -18,10 +18,10 @@ public class MagnifyingRect : MonoBehaviour
     private float _cameraDistance = 8f;
 
     [SerializeField]
-    private float _zoomStep = 5f;
+    private float _focalLength = 0.5f;
 
     [SerializeField]
-    private float _fovStep = 5f;
+    private float _imageDistance = 1f;
 
     [SerializeField]
     private Camera _magnifyingCamera;
@@ -41,9 +41,14 @@ public class MagnifyingRect : MonoBehaviour
 
     private float _zoomDistance = 0f;
 
+    private float _standardFov;
+
     private void Awake()
     {
-        _playerTransform = Camera.main.transform;
+        Camera mainCamera = Camera.main;
+        _playerTransform = mainCamera.transform;
+        _standardFov = mainCamera.fieldOfView;
+
         _debugText = _debugCanvas.GetComponentInChildren<Text>();
         _zoomDistance = _cameraDistance;
         ToggleMagnification(false);
@@ -131,28 +136,31 @@ public class MagnifyingRect : MonoBehaviour
         ISteamVR_Action_Vector2 rightHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand];
         if (rightHandTouch.axis.y != 0f && rightHandTouch.lastAxis.y != 0f)
         {
-            _zoomDistance += rightHandTouch.delta.y * _zoomStep;
-
+            _imageDistance += rightHandTouch.delta.y;
         }
         ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
         if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
         {
-            _magnifyingCamera.fieldOfView += leftHandTouch.delta.y * _fovStep;
+            _focalLength += leftHandTouch.delta.y;
         }
+
+        float eyeDistance = Vector3.Distance(_playerTransform.position, _rectObject.transform.position);
+        float magnification = (0.25f / _imageDistance) * (1 + (_imageDistance - eyeDistance) / _focalLength);
+
+        _magnifyingCamera.fieldOfView = _standardFov / magnification;
 
         // Base zoom direction on head movement? Below is a bit nauseating
         // _magnifyingCamera.transform.position = _rectObject.transform.position + _playerTransform.forward * (_cameraDistance + _zoomAmount);
 
         _magnifyingCamera.transform.position = _rectObject.transform.position + _rectObject.transform.forward * _zoomDistance;
-        // _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
-        _magnifyingCamera.transform.rotation = _rectObject.transform.rotation;
+        _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
     }
 
     private void UpdateDebugText()
     {
         _debugCanvas.transform.position = _rectObject.transform.position;
         _debugCanvas.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
-        _debugText.text = "Zoom distance: " + _zoomDistance + "\nFOV: " + _magnifyingCamera.fieldOfView;
+        _debugText.text = "Image distance: " + _imageDistance + "\nFocal length: " + _focalLength;
     }
 
 }
