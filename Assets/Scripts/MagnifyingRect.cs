@@ -15,13 +15,13 @@ public class MagnifyingRect : MonoBehaviour
     private float _rectHeight = 0.2f;
 
     [SerializeField]
-    private float _cameraDistance = 8f;
+    private float _cameraDistance = 0f;
 
     [SerializeField]
-    private float _focalLength = 0.5f;
+    private float _focalLength = 0.25f;
 
     [SerializeField]
-    private float _imageDistance = 1f;
+    private float _imageDistance = 0.25f;
 
     [SerializeField]
     private Camera _magnifyingCamera;
@@ -42,6 +42,8 @@ public class MagnifyingRect : MonoBehaviour
     private float _zoomDistance = 0f;
 
     private float _standardFov;
+
+    private float _realImageDistance;
 
     private void Awake()
     {
@@ -145,7 +147,11 @@ public class MagnifyingRect : MonoBehaviour
         }
 
         float eyeDistance = Vector3.Distance(_playerTransform.position, _rectObject.transform.position);
-        float magnification = (0.25f / _imageDistance) * (1 + (_imageDistance - eyeDistance) / _focalLength);
+        _realImageDistance = Mathf.Abs(eyeDistance - _imageDistance);
+
+        float magnification = (0.25f / eyeDistance) * (1 + ((_realImageDistance - eyeDistance) / _focalLength));
+
+        magnification = Mathf.Max(0.25f / _focalLength, magnification);
 
         _magnifyingCamera.fieldOfView = _standardFov / magnification;
 
@@ -160,7 +166,7 @@ public class MagnifyingRect : MonoBehaviour
     {
         _debugCanvas.transform.position = _rectObject.transform.position;
         _debugCanvas.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
-        _debugText.text = "Image distance: " + _imageDistance + "\nFocal length: " + _focalLength;
+        _debugText.text = "Image distance: " + _realImageDistance + "\nFocal length: " + _focalLength;
     }
 
 }
