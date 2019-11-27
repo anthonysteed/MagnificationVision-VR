@@ -1,0 +1,10 @@
+
+## Definitions
+
+The focal length of an optical system is a measure of how strongly the system converges or diverges light
+In most photography and all telescopy, where the subject is essentially infinitely far away, longer focal length (lower optical power) leads to higher magnification and a narrower angle of view; conversely, shorter focal length or higher optical power is associated with lower magnification and a wider angle of view.
+
+
+By convention, for magnifying glasses and optical microscopes, where the size of the object is a linear dimension and the apparent size is an angle, the magnification is the ratio between the apparent (angular) size as seen in the eyepiece and the angular size of the object when placed at the conventional closest distance of distinct vision: 25 cm from the eye.
+
+it is typically assumed that the user would bring the object as close to one eye as possible without it becoming blurry. This point, known as the near point of accommodation, varies with age.
