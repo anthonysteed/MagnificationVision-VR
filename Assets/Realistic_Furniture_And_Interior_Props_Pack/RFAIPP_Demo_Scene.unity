@@ -5978,15 +5978,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4294165635823520, guid: 238b4ee6ce7e33641bd288ba75246003, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0.66929
       objectReference: {fileID: 0}
     - target: {fileID: 4294165635823520, guid: 238b4ee6ce7e33641bd288ba75246003, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0.66929
       objectReference: {fileID: 0}
     - target: {fileID: 4294165635823520, guid: 238b4ee6ce7e33641bd288ba75246003, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0.66929
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7734572075098140426, guid: 238b4ee6ce7e33641bd288ba75246003, type: 3}
@@ -8069,7 +8069,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1488102094}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: 0.019}
+  m_LocalPosition: {x: -0, y: 0, z: 0.001}
   m_LocalScale: {x: 1.0679871, y: 1.0679871, z: 1.0679871}
   m_Children: []
   m_Father: {fileID: 1928551779}
@@ -8415,15 +8415,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4088058866784330, guid: 108f09a8ce2f935498f09fe0e88fc344, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0.66929
       objectReference: {fileID: 0}
     - target: {fileID: 4088058866784330, guid: 108f09a8ce2f935498f09fe0e88fc344, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0.66929
       objectReference: {fileID: 0}
     - target: {fileID: 4088058866784330, guid: 108f09a8ce2f935498f09fe0e88fc344, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0.66929
       objectReference: {fileID: 0}
     - target: {fileID: 114598644965971976, guid: 108f09a8ce2f935498f09fe0e88fc344,
         type: 3}
@@ -10017,10 +10017,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _rectObject: {fileID: 1928551778}
-  _rectHeight: 0.2
+  _rectHeight: 0.17
   _cameraDistance: 0
   _focalLength: 0.25
   _imageDistance: 0.25
+  _offsetFromHands: 0.05
   _magnifyingCamera: {fileID: 1304443050}
   _debugCanvas: {fileID: 999345805}
 --- !u!1001 &1777028889

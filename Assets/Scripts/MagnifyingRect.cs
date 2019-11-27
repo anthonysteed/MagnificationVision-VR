@@ -24,10 +24,15 @@ public class MagnifyingRect : MonoBehaviour
     private float _imageDistance = 0.25f;
 
     [SerializeField]
+    private float _offsetFromHands = 0.1f;
+
+    [SerializeField]
     private Camera _magnifyingCamera;
 
     [SerializeField]
     private GameObject _debugCanvas;
+
+    
 
     private Transform _playerTransform;
 
@@ -115,7 +120,7 @@ public class MagnifyingRect : MonoBehaviour
     {
         Transform leftTrans = _leftHand.transform;
         Transform rightTrans = _rightHand.transform;
-        float width = Vector3.Distance(leftTrans.position, rightTrans.position);
+        float width = Vector3.Distance(leftTrans.position, rightTrans.position) - _offsetFromHands;
 
         _rectObject.transform.localScale = new Vector3(width, _rectHeight, 1f);
         _magnifyingCamera.aspect = width / _rectHeight;
