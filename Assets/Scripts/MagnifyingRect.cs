@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Tobii.XR;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR;
@@ -35,7 +36,11 @@ public class MagnifyingRect : MonoBehaviour
     [SerializeField]
     private GameObject _debugCanvas;
 
-    
+    [SerializeField]
+    private int _eyeSampleWait = 3;
+
+    [SerializeField]
+    private float _interpolationTime = 1f;
 
     private Transform _playerTransform;
 
@@ -59,6 +64,19 @@ public class MagnifyingRect : MonoBehaviour
 
     private bool _debugTextIsRed = false;
 
+    private Collider _candidateCollider;
+
+    private float _lastGazeDistance = 0f;
+
+    private int _framesWaited = 0;
+
+    private float _sampledGazeDistance = 0f;
+
+    private bool _lastGazeWasValid = false;
+
+    [SerializeField]
+    private float _interpolationStep = 0.3f;
+
     private void Awake()
     {
         Camera mainCamera = Camera.main;
@@ -80,6 +98,72 @@ public class MagnifyingRect : MonoBehaviour
         _rectObject.SetActive(isEnabled);
         _debugCanvas.gameObject.SetActive(isEnabled);
         _isActive = isEnabled;
+        if (isEnabled)
+        {
+            StartCoroutine(SampleEyeGaze());
+            StartCoroutine(InterpolateImageDistance());
+        }
+        else
+        {
+            StopCoroutine(SampleEyeGaze());
+            StopCoroutine(InterpolateImageDistance());
+        }
+    }
+
+    private IEnumerator SampleEyeGaze()
+    {
+        float timePassed = 0f;
+        while (true)
+        {
+            TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
+            if (gazeRay.IsValid)
+            {
+                //Debug.Log("Gaze ray, origin: " + gazeRay.Origin + "; direction: " + gazeRay.Direction + "; convergence distance: " + TobiiXR.EyeTrackingData.ConvergenceDistance);
+                RaycastHit hit;
+                float newDistance;
+                if (Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out hit, 20f))
+                {
+                    _candidateCollider = hit.collider;
+                    newDistance = Vector3.Distance(gazeRay.Origin, hit.point);
+                }
+                else
+                {
+                    newDistance = 20f;
+                }
+                _sampledGazeDistance = (_sampledGazeDistance + newDistance) / 2f;
+                _framesWaited++;
+            }
+
+            if (_framesWaited >= _eyeSampleWait)
+            {
+                _framesWaited = 0;
+                _lastGazeDistance = _sampledGazeDistance;
+            }
+            timePassed += Time.deltaTime;
+            if (timePassed >= _interpolationTime)
+            {
+                //StartCoroutine(InterpolateImageDistance(_lastGazeDistance));
+                timePassed = 0f;
+            }
+            yield return null;
+        }
+
+    }
+
+    private IEnumerator InterpolateImageDistance()
+    {
+        while (true)
+        {
+            if (_imageDistance < _lastGazeDistance)
+            {
+                _imageDistance += _interpolationStep * _lastGazeDistance * Time.deltaTime;
+            }
+            else if (_imageDistance > _lastGazeDistance)
+            {
+                _imageDistance -= _interpolationStep * _lastGazeDistance * Time.deltaTime;
+            }
+            yield return null;
+        }
     }
 
     public void OnHandConnectionChange(SteamVR_Behaviour_Pose pose, SteamVR_Input_Sources changedSource, bool isConnected)
@@ -196,7 +280,7 @@ public class MagnifyingRect : MonoBehaviour
         {
             _debugText.color = Color.green;
         }
-        _debugText.text = "Image distance: " + _imageDistance + "\nEye distance: " + _eyeDistance + "\nFocal length: " + _focalLength + "\nMagnification: " + _magnification;
+        _debugText.text = "Gaze distance: " + _lastGazeDistance + "\nFocal length: " + _focalLength + "\nMagnification: " + _magnification;
     }
 
 }

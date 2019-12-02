@@ -10025,6 +10025,8 @@ MonoBehaviour:
   _nearPoint: 0.25
   _magnifyingCamera: {fileID: 1304443050}
   _debugCanvas: {fileID: 999345805}
+  _eyeSampleWait: 30
+  _interpolationTime: 1
 --- !u!1001 &1777028889
 PrefabInstance:
   m_ObjectHideFlags: 0
