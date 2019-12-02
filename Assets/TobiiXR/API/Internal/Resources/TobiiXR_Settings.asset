@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EyeTrackingFilterType: 
   FieldOfUse: 2
-  EyeTrackingProviderTypeStandAlone: Tobii.XR.MouseProvider
+  EyeTrackingProviderTypeStandAlone: TobiiHTCProvider
   EyeTrackingProviderTypeAndroid: Tobii.XR.NoseDirectionProvider
   LayerMask:
     serializedVersion: 2

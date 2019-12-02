@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.mengproject.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "C:\\Users\\localadmin\\sondre\\MEngProject\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "C:\\Users\\localadmin\\Documents\\GitHub\\MEng project\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "MEng project [Testing]"

@@ -27,6 +27,9 @@ public class MagnifyingRect : MonoBehaviour
     private float _offsetFromHands = 0.1f;
 
     [SerializeField]
+    private float _nearPoint = 0.25f;
+
+    [SerializeField]
     private Camera _magnifyingCamera;
 
     [SerializeField]
@@ -48,13 +51,19 @@ public class MagnifyingRect : MonoBehaviour
 
     private float _standardFov;
 
+    private float _magnification = 1f;
+
     private float _realImageDistance;
+
+    private float _eyeDistance;
+
+    private bool _debugTextIsRed = false;
 
     private void Awake()
     {
         Camera mainCamera = Camera.main;
         _playerTransform = mainCamera.transform;
-        _standardFov = mainCamera.fieldOfView;
+        _standardFov = _magnifyingCamera.fieldOfView;
 
         _debugText = _debugCanvas.GetComponentInChildren<Text>();
         _zoomDistance = _cameraDistance;
@@ -151,14 +160,22 @@ public class MagnifyingRect : MonoBehaviour
             _focalLength += leftHandTouch.delta.y;
         }
 
-        float eyeDistance = Vector3.Distance(_playerTransform.position, _rectObject.transform.position);
-        _realImageDistance = Mathf.Abs(eyeDistance - _imageDistance);
+        _eyeDistance = Vector3.Distance(_playerTransform.position, _rectObject.transform.position);
+        _realImageDistance = Mathf.Abs(_eyeDistance - _imageDistance);
 
-        float magnification = (0.25f / eyeDistance) * (1 + ((_realImageDistance - eyeDistance) / _focalLength));
+        _magnification = (_imageDistance / (_eyeDistance)) * (1 + (_eyeDistance / _focalLength));
 
-        magnification = Mathf.Max(0.25f / _focalLength, magnification);
+        if (_magnification < 1f)
+        {
+            _debugTextIsRed = true;
+            //_magnification = 1f;
+        }
+        else
+        {
+            _debugTextIsRed = false;
+        }
 
-        _magnifyingCamera.fieldOfView = _standardFov / magnification;
+        _magnifyingCamera.fieldOfView = _standardFov / Mathf.Clamp(_magnification, 1f, 10f);
 
         // Base zoom direction on head movement? Below is a bit nauseating
         // _magnifyingCamera.transform.position = _rectObject.transform.position + _playerTransform.forward * (_cameraDistance + _zoomAmount);
@@ -171,7 +188,15 @@ public class MagnifyingRect : MonoBehaviour
     {
         _debugCanvas.transform.position = _rectObject.transform.position;
         _debugCanvas.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
-        _debugText.text = "Image distance: " + _realImageDistance + "\nFocal length: " + _focalLength;
+        if (_debugTextIsRed)
+        {
+            _debugText.color = Color.red;
+        }
+        else
+        {
+            _debugText.color = Color.green;
+        }
+        _debugText.text = "Image distance: " + _imageDistance + "\nEye distance: " + _eyeDistance + "\nFocal length: " + _focalLength + "\nMagnification: " + _magnification;
     }
 
 }

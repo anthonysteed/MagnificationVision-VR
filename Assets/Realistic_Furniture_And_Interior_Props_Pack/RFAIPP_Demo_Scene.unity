@@ -7017,7 +7017,7 @@ Camera:
     height: 1
   near clip plane: 0.01
   far clip plane: 1000
-  field of view: 40
+  field of view: 60
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -10019,9 +10019,10 @@ MonoBehaviour:
   _rectObject: {fileID: 1928551778}
   _rectHeight: 0.17
   _cameraDistance: 0
-  _focalLength: 0.25
-  _imageDistance: 0.25
+  _focalLength: -4.896198
+  _imageDistance: -0.42931813
   _offsetFromHands: 0.05
+  _nearPoint: 0.25
   _magnifyingCamera: {fileID: 1304443050}
   _debugCanvas: {fileID: 999345805}
 --- !u!1001 &1777028889
@@ -10566,8 +10567,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1913074739}
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -3.539, y: -0.351, z: -5.508}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.539, y: 0.069, z: -3.947}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4000013587417553}
@@ -10576,7 +10577,7 @@ Transform:
   - {fileID: 1771870077}
   m_Father: {fileID: 0}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1913074739
 GameObject:
   m_ObjectHideFlags: 0
