@@ -10016,17 +10016,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96ebb975ca77342408933e1c917148ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _mode: 1
+  _debugMode: 1
   _rectObject: {fileID: 1928551778}
   _rectHeight: 0.17
-  _cameraDistance: 0
-  _focalLength: -4.896198
-  _imageDistance: -0.42931813
   _offsetFromHands: 0.05
-  _nearPoint: 0.25
   _magnifyingCamera: {fileID: 1304443050}
   _debugCanvas: {fileID: 999345805}
-  _eyeSampleWait: 30
-  _interpolationTime: 1
 --- !u!1001 &1777028889
 PrefabInstance:
   m_ObjectHideFlags: 0
