@@ -46,6 +46,8 @@ public class MagnifyingRect : MonoBehaviour
 
     private float _standardFov;
 
+    private Vector3 _planeNormal = Vector3.zero;
+
     private void Awake()
     {
         _playerTransform = Camera.main.transform;
@@ -123,7 +125,7 @@ public class MagnifyingRect : MonoBehaviour
         {
             UpdateRectDimensions();
             UpdateCameraTransform();
-            _magnifyingCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_debugMode);
+            _magnifyingCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_planeNormal, _debugMode);
             if (_debugMode)
             {
                 UpdateDebugCanvas();
@@ -149,8 +151,8 @@ public class MagnifyingRect : MonoBehaviour
             return;
         }
 
-        Vector3 normalDir = Vector3.Cross(rightDir, upDir);
-        _rectObject.transform.rotation = Quaternion.LookRotation(normalDir, upDir);
+        _planeNormal = Vector3.Cross(rightDir, upDir);
+        _rectObject.transform.rotation = Quaternion.LookRotation(_planeNormal, upDir);
     }
 
     private void UpdateCameraTransform()
@@ -167,7 +169,10 @@ public class MagnifyingRect : MonoBehaviour
 
     private void OnValidate()
     {
-        _magnifier = AssignMagMode();
+        if (Application.isPlaying)
+        {
+            _magnifier = AssignMagMode();
+        }
     }
 
 }

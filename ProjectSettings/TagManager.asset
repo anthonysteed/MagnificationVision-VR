@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - Hand
+  - GazeDot
+  - GazeDotWorld
+  - GazeDotScreen
+  - MagCamera
   layers:
   - Default
   - TransparentFX

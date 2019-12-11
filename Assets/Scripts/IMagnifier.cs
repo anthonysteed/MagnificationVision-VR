@@ -4,5 +4,5 @@ using UnityEngine;
 
 public interface IMagnifier
 {
-    float GetMagnification(bool debugMode);
+    float GetMagnification(Vector3 planeNormal, bool debugMode);
 }
