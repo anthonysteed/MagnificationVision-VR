@@ -43,7 +43,9 @@ public class GazeMagnifier : IMagnifier
 
     private Transform _worldDot;
 
-    private Renderer[] _dotRenderers;
+    private Transform _averageDot;
+
+    private LineRenderer[] _dotRenderers;
 
     private Camera _magCamera;
 
@@ -56,11 +58,12 @@ public class GazeMagnifier : IMagnifier
 
         _screnDot = GameObject.FindGameObjectWithTag("GazeDotScreen")?.transform;
         _worldDot = GameObject.FindGameObjectWithTag("GazeDotWorld")?.transform;
+        _averageDot = GameObject.FindGameObjectWithTag("AverageDot")?.transform;
 
         _magCamera = magGlass.GetComponentInChildren<Camera>();
 
-        _dotRenderers = new Renderer[] { _screnDot.GetComponent<Renderer>(), _worldDot.GetComponent<Renderer>() };
-        foreach (Renderer renderer in _dotRenderers)
+        _dotRenderers = new LineRenderer[] { _screnDot.GetComponent<LineRenderer>(), _worldDot.GetComponent<LineRenderer>() };
+        foreach (LineRenderer renderer in _dotRenderers)
         {
             renderer.enabled = false;
         }
@@ -72,7 +75,7 @@ public class GazeMagnifier : IMagnifier
 
     public float GetMagnification(Vector3 planeNormal, bool debugMode)
     {
-        foreach (Renderer renderer in _dotRenderers)
+        foreach (LineRenderer renderer in _dotRenderers)
         {
             renderer.enabled = true;
         }
@@ -112,24 +115,27 @@ public class GazeMagnifier : IMagnifier
                 _planeIntersection = screenHit.point;
                 _gazeSceenPos = screenHit.textureCoord;
 
-                _screnDot.position = _planeIntersection - (gazeRay.Direction * 0.01f);
-                _screnDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
+                _dotRenderers[0].SetPosition(0, gazeRay.Origin);
+                _dotRenderers[0].SetPosition(1, _planeIntersection);
+                // _screnDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
 
                 RaycastHit hit;
                 Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
 
+                _dotRenderers[1].SetPosition(0, _planeIntersection);
                 if (Physics.Raycast(magRay, out hit, _gazeRange))
                 {
                     newDistance = Vector3.Distance(_planeIntersection, hit.point);
-                    _worldDot.position = hit.point;
+                    _dotRenderers[1].SetPosition(1, hit.point);
                 }
                 else
                 {
                     newDistance = _gazeRange;
-                    _worldDot.position = _planeIntersection + (magRay.direction * _gazeRange);
+                    _dotRenderers[1].SetPosition(1, _planeIntersection + (magRay.direction * _gazeRange));
                 }
+                _averageDot.position = _averageGazeDistance * _magGlass.forward;
 
-                _worldDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
+                // _worldDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
             }
             else
             {

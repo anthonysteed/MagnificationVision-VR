@@ -9,6 +9,7 @@ TagManager:
   - GazeDotWorld
   - GazeDotScreen
   - MagCamera
+  - AverageDot
   layers:
   - Default
   - TransparentFX

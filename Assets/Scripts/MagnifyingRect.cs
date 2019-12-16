@@ -67,6 +67,8 @@ public class MagnifyingRect : MonoBehaviour
                 return new NaturalMagnifier(_playerTransform, _rectObject.transform, _debugText);
             case MagnificationMode.GAZE:
                 return new GazeMagnifier(_playerTransform, _rectObject.transform, _debugText);
+            case MagnificationMode.COMBINED:
+                return new CombinedMagnifier(_playerTransform, _rectObject.transform, _debugText);
         }
         return null;
     }
