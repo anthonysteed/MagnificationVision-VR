@@ -11,6 +11,8 @@ public class GazeMagnifier : IMagnifier
 
     private Transform _magGlass;
 
+    private Vector3 _lastValidEyePos;
+
     // private Transform _gazeDot;
 
     private Text _debugText;
@@ -19,11 +21,17 @@ public class GazeMagnifier : IMagnifier
 
     private float _sensitivity = 0.027f;
 
-    private float _convergenceSpeed = 0.12f;
+    private float _distMultiplier = 0.12f;
 
     private bool _isResetting = false;
 
+    private float _lastGazeDistance = 0f;
+
     private float _averageGazeDistance;
+
+    private Vector3 _lastGazeDir;
+
+    private Vector3 _averageGazeDir;
 
     private int _framesPerSample;
 
@@ -31,11 +39,7 @@ public class GazeMagnifier : IMagnifier
 
     private Vector3[] _sampledPoints;
 
-    private Vector3 _newDirection;
-
     private Vector3 _averageDirection;
-
-    private float _realAverageDistance = 0f;
 
     private float _lastStableDistance;
 
@@ -43,13 +47,9 @@ public class GazeMagnifier : IMagnifier
 
     private float _timePassed = 0f;
 
-    private Vector3 _lastGazeDir;
-
     private Vector3 _planeIntersection;
 
     private Vector3 _gazeSceenPos;
-
-    private float _thresholdAngle = 1f;
 
     private Transform _screnDot;
 
@@ -69,6 +69,7 @@ public class GazeMagnifier : IMagnifier
         _debugText = debugText;
 
         _averageDirection = Vector3.zero;
+        _lastValidEyePos = player.position;
 
         _screnDot = GameObject.FindGameObjectWithTag("GazeDotScreen")?.transform;
         _worldDot = GameObject.FindGameObjectWithTag("GazeDotWorld")?.transform;
@@ -100,7 +101,7 @@ public class GazeMagnifier : IMagnifier
             ISteamVR_Action_Vector2 rightHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand];
             if (rightHandTouch.axis.y != 0f && rightHandTouch.lastAxis.y != 0f)
             {
-               _convergenceSpeed += rightHandTouch.delta.y * 0.1f;
+               _distMultiplier += rightHandTouch.delta.y * 0.1f;
             }
             ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
             if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
@@ -120,71 +121,83 @@ public class GazeMagnifier : IMagnifier
         }
         else
         {
-            float newDistance;
             // Find gaze-plane intersection
             TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
             RaycastHit screenHit;
             if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out screenHit, _gazeRange) && screenHit.collider.transform == _magGlass)
             {
+                _lastValidEyePos = gazeRay.Origin;
+
                 _planeIntersection = screenHit.point;
                 _gazeSceenPos = screenHit.textureCoord;
-
-                _dotRenderers[0].SetPosition(0, gazeRay.Origin);
-                _dotRenderers[0].SetPosition(1, _planeIntersection);
-                // _screnDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
 
                 RaycastHit hit;
                 Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
 
-                _dotRenderers[1].SetPosition(0, _planeIntersection);
                 Vector3 hitPos;
                 if (Physics.Raycast(magRay, out hit, _gazeRange))
                 {
-                    newDistance = Vector3.Distance(_planeIntersection, hit.point);
                     hitPos = hit.point;
                 }
                 else
                 {
-                    newDistance = _gazeRange;
                     hitPos = _planeIntersection + (magRay.direction * _gazeRange);
                 }
-                _dotRenderers[1].SetPosition(1, hitPos);
 
-                _newDirection = hitPos - gazeRay.Origin;
-
-                // _worldDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
+                _sampledPoints[_framesPassed] = hitPos;
             }
             else
             {
-                newDistance = 0f;
-                foreach (Renderer renderer in _dotRenderers)
+                if (_framesPassed == 0)
                 {
-                    renderer.enabled = false;
+                    _sampledPoints[0] = Vector3.zero;
                 }
+                else
+                {
+                    _sampledPoints[_framesPassed] = _sampledPoints[_framesPassed - 1];
+                }
+                
             }
 
-            if (newDistance > _averageGazeDistance)
+            _framesPassed++;
+            if (_framesPassed >= _framesPerSample)
             {
-                _averageGazeDistance += _sensitivity * (newDistance - _averageGazeDistance);
+                Vector3 averageDir = Vector3.zero;
+                float averageDist = 0f;
+                foreach (Vector3 point in _sampledPoints)
+                {
+                    Vector3 toPoint = point - _lastValidEyePos;
+                    averageDir += toPoint;
+                    averageDist += toPoint.magnitude;
+                }
+                averageDir /= _framesPerSample;
+                averageDist /= _framesPerSample;
+
+                _lastGazeDistance = _averageGazeDistance;
+                _lastGazeDir = _averageDirection;
+
+                _averageGazeDistance = averageDist;
+                _averageGazeDir = averageDir;
+
+                _framesPassed = 0;
             }
-            else if (newDistance < _averageGazeDistance)
-            {
-                _averageGazeDistance -= _sensitivity * (_averageGazeDistance - newDistance);
-            }
-            _averageDirection = (_averageDirection +  _newDirection).normalized;
-            _averageDot.position = _averageDirection * _averageGazeDistance;
-            _lastGazeDir = gazeRay.Direction;
 
             // Reset zoom on left trigger click
             if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.LeftHand].stateDown)
             {
                 _isResetting = true;
+                _framesPassed = 0;
                 _timePassed = 0f;
                 _lastStableDistance = _averageGazeDistance;
             }
         }
 
-        float magnification = 1f + (_averageGazeDistance * _convergenceSpeed);
+        float t = ((float)_framesPassed) / ((float)_framesPerSample);
+        float lerpedDist = Mathf.Lerp(_lastGazeDistance, _averageGazeDistance, t);
+        Vector3 lerpedDir = Vector3.Lerp(_lastGazeDir, _averageGazeDir, t);
+        _averageDot.position = lerpedDir * lerpedDist;
+
+        float magnification = 1f + (lerpedDist * _distMultiplier);
 
         if (debugMode)
         {
@@ -201,7 +214,7 @@ public class GazeMagnifier : IMagnifier
                 _debugText.color = Color.green;
             }
 
-            _debugText.text = "Sensitivity: " + _sensitivity + "\nConvergence Speed: " + _convergenceSpeed + "\nMagnification: " + magnification;
+            _debugText.text = "Sensitivity: " + _sensitivity + "\nConvergence Speed: " + _distMultiplier + "\nMagnification: " + magnification;
         }
         return magnification;
     }
