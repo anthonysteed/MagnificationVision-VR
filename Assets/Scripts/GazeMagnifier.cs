@@ -17,7 +17,7 @@ public class GazeMagnifier : IMagnifier
 
     private Text _debugText;
 
-    private float _gazeRange = 100f;
+    private float _gazeRange = 500f;
 
     private float _sensitivity = 0.027f;
 
@@ -29,11 +29,11 @@ public class GazeMagnifier : IMagnifier
 
     private float _averageGazeDistance;
 
-    private Vector3 _lastGazeDir;
+    private Vector3 _lastDotPos;
 
-    private Vector3 _averageGazeDir;
+    private Vector3 _targetDotPos;
 
-    private int _framesPerSample;
+    private int _framesPerSample = 30;
 
     private int _framesPassed = 0;
 
@@ -46,6 +46,8 @@ public class GazeMagnifier : IMagnifier
     private float _resetTime = 1f;
 
     private float _timePassed = 0f;
+
+    private float _lastMag = 0f;
 
     private Vector3 _planeIntersection;
 
@@ -76,6 +78,8 @@ public class GazeMagnifier : IMagnifier
         _averageDot = GameObject.FindGameObjectWithTag("AverageDot")?.transform;
 
         _magCamera = magGlass.GetComponentInChildren<Camera>();
+
+        _sampledPoints = new Vector3[_framesPerSample];
 
         _dotRenderers = new LineRenderer[] { _screnDot.GetComponent<LineRenderer>(), _worldDot.GetComponent<LineRenderer>() };
         foreach (LineRenderer renderer in _dotRenderers)
@@ -110,6 +114,12 @@ public class GazeMagnifier : IMagnifier
             }
         }
 
+        if (TobiiXR.EyeTrackingData.IsLeftEyeBlinking && TobiiXR.EyeTrackingData.IsRightEyeBlinking)
+        {
+            return _lastMag;
+        }
+
+
         if (_isResetting)
         {
             _timePassed += Time.deltaTime;
@@ -141,6 +151,7 @@ public class GazeMagnifier : IMagnifier
                 }
                 else
                 {
+                    Debug.Log("Looking outside range");
                     hitPos = _planeIntersection + (magRay.direction * _gazeRange);
                 }
 
@@ -148,36 +159,28 @@ public class GazeMagnifier : IMagnifier
             }
             else
             {
-                if (_framesPassed == 0)
-                {
-                    _sampledPoints[0] = Vector3.zero;
-                }
-                else
-                {
-                    _sampledPoints[_framesPassed] = _sampledPoints[_framesPassed - 1];
-                }
-                
+                return _lastMag;
             }
 
             _framesPassed++;
-            if (_framesPassed >= _framesPerSample)
+            if (_framesPassed == _framesPerSample)
             {
-                Vector3 averageDir = Vector3.zero;
+                Vector3 averagePoint = Vector3.zero;
                 float averageDist = 0f;
                 foreach (Vector3 point in _sampledPoints)
                 {
                     Vector3 toPoint = point - _lastValidEyePos;
-                    averageDir += toPoint;
                     averageDist += toPoint.magnitude;
+                    averagePoint += point;
                 }
-                averageDir /= _framesPerSample;
+                averagePoint /= _framesPerSample;
                 averageDist /= _framesPerSample;
 
                 _lastGazeDistance = _averageGazeDistance;
-                _lastGazeDir = _averageDirection;
+                _lastDotPos = _targetDotPos;
 
                 _averageGazeDistance = averageDist;
-                _averageGazeDir = averageDir;
+                _targetDotPos = averagePoint;
 
                 _framesPassed = 0;
             }
@@ -193,9 +196,9 @@ public class GazeMagnifier : IMagnifier
         }
 
         float t = ((float)_framesPassed) / ((float)_framesPerSample);
+        _averageDot.position = Vector3.Lerp(_lastDotPos, _targetDotPos, t);
         float lerpedDist = Mathf.Lerp(_lastGazeDistance, _averageGazeDistance, t);
-        Vector3 lerpedDir = Vector3.Lerp(_lastGazeDir, _averageGazeDir, t);
-        _averageDot.position = lerpedDir * lerpedDist;
+        
 
         float magnification = 1f + (lerpedDist * _distMultiplier);
 
@@ -216,6 +219,7 @@ public class GazeMagnifier : IMagnifier
 
             _debugText.text = "Sensitivity: " + _sensitivity + "\nConvergence Speed: " + _distMultiplier + "\nMagnification: " + magnification;
         }
+        _lastMag = magnification;
         return magnification;
     }
 

@@ -30,6 +30,9 @@ public class MagnifyingRect : MonoBehaviour
     private Camera _magnifyingCamera;
 
     [SerializeField]
+    private float _thresholdAngle = 40f;
+
+    [SerializeField]
     private GameObject _debugCanvas;
 
     private IMagnifier _magnifier;
@@ -39,6 +42,8 @@ public class MagnifyingRect : MonoBehaviour
     private Transform _leftHand;
 
     private Transform _rightHand;
+
+    private Gazeable _rectGazeable;
 
     private Text _debugText;
 
@@ -52,6 +57,7 @@ public class MagnifyingRect : MonoBehaviour
     {
         _playerTransform = Camera.main.transform;
         _standardFov = _magnifyingCamera.fieldOfView;
+        _rectGazeable = _rectObject.GetComponent<Gazeable>();
 
         _debugText = _debugCanvas.GetComponentInChildren<Text>();
         ToggleMagnification(false);
