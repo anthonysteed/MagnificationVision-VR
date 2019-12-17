@@ -15,7 +15,7 @@ public class GazeMagnifier : IMagnifier
 
     private Text _debugText;
 
-    private float _gazeRange = 20f;
+    private float _gazeRange = 100f;
 
     private float _sensitivity = 0.027f;
 
@@ -24,6 +24,18 @@ public class GazeMagnifier : IMagnifier
     private bool _isResetting = false;
 
     private float _averageGazeDistance;
+
+    private int _framesPerSample;
+
+    private int _framesPassed = 0;
+
+    private Vector3[] _sampledPoints;
+
+    private Vector3 _newDirection;
+
+    private Vector3 _averageDirection;
+
+    private float _realAverageDistance = 0f;
 
     private float _lastStableDistance;
 
@@ -55,6 +67,8 @@ public class GazeMagnifier : IMagnifier
         _player = player;
         _magGlass = magGlass;
         _debugText = debugText;
+
+        _averageDirection = Vector3.zero;
 
         _screnDot = GameObject.FindGameObjectWithTag("GazeDotScreen")?.transform;
         _worldDot = GameObject.FindGameObjectWithTag("GazeDotWorld")?.transform;
@@ -123,17 +137,20 @@ public class GazeMagnifier : IMagnifier
                 Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
 
                 _dotRenderers[1].SetPosition(0, _planeIntersection);
+                Vector3 hitPos;
                 if (Physics.Raycast(magRay, out hit, _gazeRange))
                 {
                     newDistance = Vector3.Distance(_planeIntersection, hit.point);
-                    _dotRenderers[1].SetPosition(1, hit.point);
+                    hitPos = hit.point;
                 }
                 else
                 {
                     newDistance = _gazeRange;
-                    _dotRenderers[1].SetPosition(1, _planeIntersection + (magRay.direction * _gazeRange));
+                    hitPos = _planeIntersection + (magRay.direction * _gazeRange);
                 }
-                _averageDot.position = _averageGazeDistance * _magGlass.forward;
+                _dotRenderers[1].SetPosition(1, hitPos);
+
+                _newDirection = hitPos - gazeRay.Origin;
 
                 // _worldDot.rotation = Quaternion.LookRotation(gazeRay.Direction, _player.up);
             }
@@ -154,6 +171,8 @@ public class GazeMagnifier : IMagnifier
             {
                 _averageGazeDistance -= _sensitivity * (_averageGazeDistance - newDistance);
             }
+            _averageDirection = (_averageDirection +  _newDirection).normalized;
+            _averageDot.position = _averageDirection * _averageGazeDistance;
             _lastGazeDir = gazeRay.Direction;
 
             // Reset zoom on left trigger click
