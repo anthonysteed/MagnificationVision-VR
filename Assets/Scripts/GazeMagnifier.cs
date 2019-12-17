@@ -53,6 +53,10 @@ public class GazeMagnifier : IMagnifier
 
     private Vector3 _gazeSceenPos;
 
+    private Vector3? _teleportCandidate;
+
+    private float _eyesClosedTime = 0f;
+
     private Transform _screnDot;
 
     private Transform _worldDot;
@@ -116,7 +120,30 @@ public class GazeMagnifier : IMagnifier
 
         if (TobiiXR.EyeTrackingData.IsLeftEyeBlinking && TobiiXR.EyeTrackingData.IsRightEyeBlinking)
         {
+            if (!_teleportCandidate.HasValue)
+            {
+                _teleportCandidate = _averageDot.position;
+                Debug.Log("Closing eyes");
+            }
+            _eyesClosedTime += Time.deltaTime;
+            if (_eyesClosedTime >= 2f)
+            {
+                _player.position = _teleportCandidate.Value;
+                _teleportCandidate = null;
+                _eyesClosedTime = 0f;
+            }
             return _lastMag;
+        }
+        else if (_teleportCandidate.HasValue)
+        {
+            if (!TobiiXR.EyeTrackingData.ConvergenceDistanceIsValid || !TobiiXR.EyeTrackingData.GazeRay.IsValid)
+            {
+                return _lastMag;
+            }
+
+            Debug.Log("Opened eyes after " + _eyesClosedTime + " seconds");
+            _teleportCandidate = null;
+            _eyesClosedTime = 0f;
         }
 
 

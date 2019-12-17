@@ -45,6 +45,8 @@ public class MagnifyingRect : MonoBehaviour
 
     private Gazeable _rectGazeable;
 
+    private LerpAlpha[] _lerpAlphas;
+
     private Text _debugText;
 
     private bool _isActive = false;
@@ -58,11 +60,16 @@ public class MagnifyingRect : MonoBehaviour
         _playerTransform = Camera.main.transform;
         _standardFov = _magnifyingCamera.fieldOfView;
         _rectGazeable = _rectObject.GetComponent<Gazeable>();
+        _lerpAlphas = _rectObject.GetComponentsInChildren<LerpAlpha>();
 
         _debugText = _debugCanvas.GetComponentInChildren<Text>();
-        ToggleMagnification(false);
 
         _magnifier = AssignMagMode();
+    }
+
+    private void Start()
+    {
+        ToggleMagnification(false);
     }
 
     private IMagnifier AssignMagMode()
@@ -86,7 +93,12 @@ public class MagnifyingRect : MonoBehaviour
 
     private void ToggleMagnification(bool isEnabled)
     {
-        _rectObject.SetActive(isEnabled);
+        float t = isEnabled ? 1f : 0f;
+        foreach (LerpAlpha la in _lerpAlphas)
+        {
+            la.SetT(t);
+        }
+
         _debugCanvas.gameObject.SetActive(isEnabled && _debugMode);
         _isActive = isEnabled;
     }
@@ -123,15 +135,14 @@ public class MagnifyingRect : MonoBehaviour
 
     private void Update()
     {
-        // If button pressed, enable the rect and move the camera
-        if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand].stateDown && AreHandsAlive())
+        // 
+        if (AreHandsAlive())
         {
-            ToggleMagnification(!_isActive);
+            UpdateRectDimensions();
         }
 
         if (_isActive)
         {
-            UpdateRectDimensions();
             UpdateCameraTransform();
             _magnifyingCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_planeNormal, _debugMode);
             if (_debugMode)
@@ -153,10 +164,14 @@ public class MagnifyingRect : MonoBehaviour
 
         Vector3 upDir = leftTrans.forward + rightTrans.forward;
         Vector3 rightDir = rightTrans.position - leftTrans.position;
-        if (Vector3.Angle(upDir, rightDir) < 1f)
+        //if (Vector3.Angle(leftTrans.forward, rightDir) < _thresholdAngle && _rectGazeable.HasFocus)
+        if (true)
+        {
+            ToggleMagnification(true);
+        }
+        else
         {
             ToggleMagnification(false);
-            return;
         }
 
         _planeNormal = Vector3.Cross(rightDir, upDir);
