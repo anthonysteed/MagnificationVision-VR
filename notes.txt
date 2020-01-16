@@ -1,5 +1,8 @@
-* adjust render texture width to distance between hands
-* set height statically
-* set rotation as facing vertically at start
-	* record hands' rotation at start RA0, RB0
-	* as average rotation of hands change (RA + RB) / 2, rotate rect by same amount (during each Update)
+# TO-DO:
+
+* render gaze dot with 30-frame sampled average, but create a second moving average of distance multipliers
+ (so magnification slowly converges to current gaze distance)
+* augment mag camera rotation with gaze rotation (play around with how much)
+* teleportation to dot position with button click/hold
+
+* stretch: activate mag glass only if hands align

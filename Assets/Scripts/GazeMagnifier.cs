@@ -21,6 +21,10 @@ public class GazeMagnifier : IMagnifier
 
     private float _distMultiplier = 0.12f;
 
+    private float _idleResetTime = 1f;
+
+    private float _timeAtLastSample;
+
     private bool _isResetting = false;
 
     private float _lastGazeDistance = 0f;
@@ -31,9 +35,9 @@ public class GazeMagnifier : IMagnifier
 
     private Vector3 _targetDotPos;
 
-    private int _framesPerSample = 30;
+    private int _numFramesToSample = 30;
 
-    private int _framesPassed = 0;
+    private int _frameIndex = 0;
 
     private Vector3[] _sampledPoints;
 
@@ -50,6 +54,8 @@ public class GazeMagnifier : IMagnifier
     private Vector3 _gazeSceenPos;
 
     private Vector3? _teleportCandidate;
+
+    private Vector3 _lastPos;
 
     private float _eyesClosedTime = 0f;
 
@@ -69,6 +75,7 @@ public class GazeMagnifier : IMagnifier
         _player = player;
         _magGlass = magGlass;
         _debugText = debugText;
+        _timeAtLastSample = Time.time;
 
         _averageDirection = Vector3.zero;
 
@@ -78,7 +85,7 @@ public class GazeMagnifier : IMagnifier
 
         _magCamera = magGlass.GetComponentInChildren<Camera>();
 
-        _sampledPoints = new Vector3[_framesPerSample];
+        _sampledPoints = new Vector3[_numFramesToSample];
 
         _dotRenderers = new LineRenderer[] { _screnDot.GetComponent<LineRenderer>(), _worldDot.GetComponent<LineRenderer>() };
         foreach (LineRenderer renderer in _dotRenderers)
@@ -93,6 +100,12 @@ public class GazeMagnifier : IMagnifier
 
     public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal, bool debugMode)
     {
+        if (Time.time - _timeAtLastSample > _idleResetTime)
+        {
+            // Reset
+            _frameIndex = 0;
+        }
+
         foreach (LineRenderer renderer in _dotRenderers)
         {
             renderer.enabled = true;
@@ -168,48 +181,42 @@ public class GazeMagnifier : IMagnifier
                 hitPos = gazePoint.point + (magRay.direction * _gazeRange);
             }
 
-            _sampledPoints[_framesPassed] = hitPos;
-            Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
+            _sampledPoints[_frameIndex] = hitPos;
 
-            _framesPassed++;
-            if (_framesPassed == _framesPerSample)
+            float eyeVelocity = Vector3.Distance(_lastDotPos, hitPos) / Time.deltaTime;
+            int k = (int) Mathf.Min(_numFramesToSample * (eyeVelocity * _sensitivity), _numFramesToSample);
+
+            Vector3 dotPos = Vector3.zero;
+            _frameIndex = (_frameIndex + 1) % _numFramesToSample;
+
+            int i = _frameIndex - k;
+            if (i < 0)
             {
-                Vector3 averagePoint = Vector3.zero;
-                float averageDist = 0f;
-                foreach (Vector3 point in _sampledPoints)
-                {
-                    Vector3 toPoint = point - eyeBallPos;
-                    averageDist += toPoint.magnitude;
-                    averagePoint += point;
-                }
-                averagePoint /= _framesPerSample;
-                averageDist /= _framesPerSample;
-
-                _lastGazeDistance = _averageGazeDistance;
-                _lastDotPos = _targetDotPos;
-
-                _averageGazeDistance = averageDist;
-                _targetDotPos = averagePoint;
-
-                _framesPassed = 0;
+                i += _numFramesToSample;
             }
+
+            int samplesUsed = 0;
+            do
+            {
+                dotPos += _sampledPoints[i];
+                i = (i + 1) % _numFramesToSample;
+                samplesUsed++;
+            }
+            while (samplesUsed < k);
+            dotPos /= k;
+            _averageDot.position = dotPos;
 
             // Reset zoom on left trigger click
             if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.LeftHand].stateDown)
             {
                 _isResetting = true;
-                _framesPassed = 0;
+                _frameIndex = 0;
                 _timePassed = 0f;
                 _lastStableDistance = _averageGazeDistance;
             }
         }
 
-        float t = ((float)_framesPassed) / ((float)_framesPerSample);
-        _averageDot.position = Vector3.Lerp(_lastDotPos, _targetDotPos, t);
-        float lerpedDist = Mathf.Lerp(_lastGazeDistance, _averageGazeDistance, t);
-        
-
-        float magnification = 1f + (lerpedDist * _distMultiplier);
+        float magnification = 1f + (Vector3.Distance(_player.position, _averageDot.position) * _distMultiplier);
 
         if (debugMode)
         {
@@ -229,7 +236,14 @@ public class GazeMagnifier : IMagnifier
             _debugText.text = "Sensitivity: " + _sensitivity + "\nConvergence Speed: " + _distMultiplier + "\nMagnification: " + magnification;
         }
         _lastMag = magnification;
+        _timeAtLastSample = Time.time;
         return magnification;
+    }
+
+    private float GetWeightedAverageDist()
+    {
+        // TODO: Take weighted average of weighted average distances
+        return 69f;
     }
 
 }
