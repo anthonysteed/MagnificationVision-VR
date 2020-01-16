@@ -24,7 +24,7 @@ public class NaturalMagnifier : IMagnifier
         _debugText.alignment = TextAnchor.UpperLeft;
     }
 
-    public float GetMagnification(Vector3 planeNormal, bool debugMode)
+    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal, bool debugMode)
     {
         if (debugMode)
         {

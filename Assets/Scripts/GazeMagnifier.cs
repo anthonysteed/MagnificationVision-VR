@@ -11,8 +11,6 @@ public class GazeMagnifier : IMagnifier
 
     private Transform _magGlass;
 
-    private Vector3 _lastValidEyePos;
-
     // private Transform _gazeDot;
 
     private Text _debugText;
@@ -49,8 +47,6 @@ public class GazeMagnifier : IMagnifier
 
     private float _lastMag = 0f;
 
-    private Vector3 _planeIntersection;
-
     private Vector3 _gazeSceenPos;
 
     private Vector3? _teleportCandidate;
@@ -75,7 +71,6 @@ public class GazeMagnifier : IMagnifier
         _debugText = debugText;
 
         _averageDirection = Vector3.zero;
-        _lastValidEyePos = player.position;
 
         _screnDot = GameObject.FindGameObjectWithTag("GazeDotScreen")?.transform;
         _worldDot = GameObject.FindGameObjectWithTag("GazeDotWorld")?.transform;
@@ -96,7 +91,7 @@ public class GazeMagnifier : IMagnifier
         //}
     }
 
-    public float GetMagnification(Vector3 planeNormal, bool debugMode)
+    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal, bool debugMode)
     {
         foreach (LineRenderer renderer in _dotRenderers)
         {
@@ -158,36 +153,23 @@ public class GazeMagnifier : IMagnifier
         }
         else
         {
-            // Find gaze-plane intersection
-            TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
-            RaycastHit screenHit;
-            if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out screenHit, _gazeRange) && screenHit.collider.transform == _magGlass)
+            _gazeSceenPos = gazePoint.textureCoord;
+            RaycastHit hit;
+            Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
+
+            Vector3 hitPos;
+            if (Physics.Raycast(magRay, out hit, _gazeRange))
             {
-                _lastValidEyePos = gazeRay.Origin;
-
-                _planeIntersection = screenHit.point;
-                _gazeSceenPos = screenHit.textureCoord;
-
-                RaycastHit hit;
-                Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
-
-                Vector3 hitPos;
-                if (Physics.Raycast(magRay, out hit, _gazeRange))
-                {
-                    hitPos = hit.point;
-                }
-                else
-                {
-                    Debug.Log("Looking outside range");
-                    hitPos = _planeIntersection + (magRay.direction * _gazeRange);
-                }
-
-                _sampledPoints[_framesPassed] = hitPos;
+                hitPos = hit.point;
             }
             else
             {
-                return _lastMag;
+                Debug.Log("Looking outside range");
+                hitPos = gazePoint.point + (magRay.direction * _gazeRange);
             }
+
+            _sampledPoints[_framesPassed] = hitPos;
+            Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
 
             _framesPassed++;
             if (_framesPassed == _framesPerSample)
@@ -196,7 +178,7 @@ public class GazeMagnifier : IMagnifier
                 float averageDist = 0f;
                 foreach (Vector3 point in _sampledPoints)
                 {
-                    Vector3 toPoint = point - _lastValidEyePos;
+                    Vector3 toPoint = point - eyeBallPos;
                     averageDist += toPoint.magnitude;
                     averagePoint += point;
                 }

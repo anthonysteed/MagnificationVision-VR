@@ -22,10 +22,10 @@ public class CombinedMagnifier : IMagnifier
         _debugText = debugText;
     }
 
-    public float GetMagnification(Vector3 planeNormal, bool debugMode)
+    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal, bool debugMode)
     {
-        float naturalMag = _naturalMag.GetMagnification(planeNormal, false);
-        float gazeMag = _gazeMag.GetMagnification(planeNormal, false);
+        float naturalMag = _naturalMag.GetMagnification(gazePoint, planeNormal, false);
+        float gazeMag = _gazeMag.GetMagnification(gazePoint, planeNormal, false);
 
         if (debugMode)
         {

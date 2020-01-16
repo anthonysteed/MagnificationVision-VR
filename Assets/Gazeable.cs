@@ -5,10 +5,11 @@ using UnityEngine;
 
 public class Gazeable : MonoBehaviour, IGazeFocusable
 {
-    public bool HasFocus { get; private set; }
+    public bool HasFocus { get; private set; } = true;
 
     public void GazeFocusChanged(bool hasFocus)
     {
+        Debug.Log("Gaze focus changed: " + hasFocus);
         HasFocus = hasFocus;
     }
 }
