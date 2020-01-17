@@ -35,11 +35,17 @@ public class GazeMagnifier : IMagnifier
 
     private Vector3 _targetDotPos;
 
-    private int _numFramesToSample = 30;
+    private const int _numFramesToSample = 30;
+
+    private int _numInertialFramesToSample = _numFramesToSample * 3;
 
     private int _frameIndex = 0;
 
+    private int _inertialFrameIndex = 0;
+
     private Vector3[] _sampledPoints;
+
+    private float[] _sampledDistances;
 
     private Vector3 _averageDirection;
 
@@ -86,6 +92,7 @@ public class GazeMagnifier : IMagnifier
         _magCamera = magGlass.GetComponentInChildren<Camera>();
 
         _sampledPoints = new Vector3[_numFramesToSample];
+        _sampledDistances = new float[_numInertialFramesToSample];
 
         _dotRenderers = new LineRenderer[] { _screnDot.GetComponent<LineRenderer>(), _worldDot.GetComponent<LineRenderer>() };
         foreach (LineRenderer renderer in _dotRenderers)
@@ -154,7 +161,7 @@ public class GazeMagnifier : IMagnifier
             _eyesClosedTime = 0f;
         }
 
-
+        float eyeVelocity = 0f;
         if (_isResetting)
         {
             _timePassed += Time.deltaTime;
@@ -167,11 +174,10 @@ public class GazeMagnifier : IMagnifier
         else
         {
             _gazeSceenPos = gazePoint.textureCoord;
-            RaycastHit hit;
             Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
 
             Vector3 hitPos;
-            if (Physics.Raycast(magRay, out hit, _gazeRange))
+            if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange))
             {
                 hitPos = hit.point;
             }
@@ -183,17 +189,19 @@ public class GazeMagnifier : IMagnifier
 
             _sampledPoints[_frameIndex] = hitPos;
 
-            float eyeVelocity = Vector3.Distance(_lastDotPos, hitPos) / Time.deltaTime;
+            eyeVelocity = Vector3.Distance(_lastDotPos, hitPos) / Time.deltaTime;
             int k = (int) Mathf.Min(_numFramesToSample * (eyeVelocity * _sensitivity), _numFramesToSample);
 
             Vector3 dotPos = Vector3.zero;
             _frameIndex = (_frameIndex + 1) % _numFramesToSample;
 
             int i = _frameIndex - k;
+
             if (i < 0)
             {
                 i += _numFramesToSample;
             }
+            Debug.Assert(i >= 0 && i < _numFramesToSample, "Position average error: i is " + i);
 
             int samplesUsed = 0;
             do
@@ -216,7 +224,10 @@ public class GazeMagnifier : IMagnifier
             }
         }
 
-        float magnification = 1f + (Vector3.Distance(_player.position, _averageDot.position) * _distMultiplier);
+        Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
+        float distToDot = Vector3.Distance(eyeBallPos, _averageDot.position);
+
+        float magnification = 1f + (GetWeightedAverageDist(distToDot, eyeVelocity) * _distMultiplier);
 
         if (debugMode)
         {
@@ -240,10 +251,34 @@ public class GazeMagnifier : IMagnifier
         return magnification;
     }
 
-    private float GetWeightedAverageDist()
+    // Take weighted average of weighted average distances
+    private float GetWeightedAverageDist(float currentDist, float eyeVelocity)
     {
-        // TODO: Take weighted average of weighted average distances
-        return 69f;
+        Debug.Assert(_inertialFrameIndex >= 0 && _inertialFrameIndex < _numInertialFramesToSample);
+
+        _sampledDistances[_inertialFrameIndex] = currentDist;
+
+        int k = (int)Mathf.Min(_numInertialFramesToSample * (eyeVelocity * _sensitivity), _numInertialFramesToSample);
+        float averageDist = 0f;
+        _inertialFrameIndex = (_inertialFrameIndex + 1) % _numInertialFramesToSample;
+
+        int i = _inertialFrameIndex - k;
+        if (i < 0)
+        {
+            i += _numInertialFramesToSample;
+        }
+        Debug.Assert(i >= 0 && i < _numInertialFramesToSample, "Distance average error: i is " + i);
+
+        int samplesUsed = 0;
+        do
+        {
+            averageDist += _sampledDistances[i];
+            i = (i + 1) % _numInertialFramesToSample;
+            samplesUsed++;
+        }
+        while (samplesUsed < k);
+        averageDist /= k;
+        return averageDist;
     }
 
 }
