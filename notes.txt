@@ -1,7 +1,8 @@
 # TO-DO:
 
-* adjust mag. distance average to weigh more recent samples less? (to slow down convergence to point far away)
-* augment mag camera rotation with gaze rotation (play around with how much)
 * teleportation to dot position with button click/hold
+
+* more reliable (and fast) zoom-out
+* augment mag camera rotation with gaze rotation (play around with how much)
 
 * stretch: activate mag glass only if hands align

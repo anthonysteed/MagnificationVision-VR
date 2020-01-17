@@ -11,6 +11,8 @@ public class GazeMagnifier : IMagnifier
 
     private Transform _player;
 
+    private TeleportPerson _playerToTeleport;
+
     private Transform _magGlass;
 
     // private Transform _gazeDot;
@@ -65,7 +67,7 @@ public class GazeMagnifier : IMagnifier
 
     private Vector3 _lastPos;
 
-    private float _eyesClosedTime = 0f;
+    private float _holdDownTime = 0f;
 
     private Transform _screnDot;
 
@@ -83,6 +85,7 @@ public class GazeMagnifier : IMagnifier
     public GazeMagnifier(Transform player, Transform magGlass, Text debugText)
     {
         _player = player;
+        _playerToTeleport = player.GetComponent<TeleportPerson>();
         _magGlass = magGlass;
         _debugText = debugText;
         _timeAtLastSample = Time.time;
@@ -136,99 +139,74 @@ public class GazeMagnifier : IMagnifier
                 _sensitivity += leftHandTouch.delta.y * 0.1f;
             }
         }
-
-        if (TobiiXR.EyeTrackingData.IsLeftEyeBlinking && TobiiXR.EyeTrackingData.IsRightEyeBlinking)
+        SteamVR_Action_Boolean_Source triggerDown = SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand];
+        if (triggerDown.state)
         {
             if (!_teleportCandidate.HasValue)
             {
                 _teleportCandidate = _averageDot.position;
-                Debug.Log("Closing eyes");
+                Debug.Log("Pending teleport...");
             }
-            _eyesClosedTime += Time.deltaTime;
-            if (_eyesClosedTime >= 2f)
+            _holdDownTime += Time.deltaTime;
+            if (_holdDownTime >= 2f)
             {
-                _player.position = _teleportCandidate.Value;
+                // Start teleport
+                Debug.Log("Teleporting to " + _teleportCandidate.Value);
+                _playerToTeleport.Teleport(_teleportCandidate.Value);
                 _teleportCandidate = null;
-                _eyesClosedTime = 0f;
+                _holdDownTime = 0f;
             }
             return _lastMag;
         }
         else if (_teleportCandidate.HasValue)
         {
-            if (!TobiiXR.EyeTrackingData.ConvergenceDistanceIsValid || !TobiiXR.EyeTrackingData.GazeRay.IsValid)
-            {
-                return _lastMag;
-            }
-
-            Debug.Log("Opened eyes after " + _eyesClosedTime + " seconds");
+            Debug.Log("Released teleport trigger after " + _holdDownTime + " seconds");
             _teleportCandidate = null;
-            _eyesClosedTime = 0f;
+            _holdDownTime = 0f;
         }
 
-        float eyeVelocity = 0f;
-        if (_isResetting)
+        _gazeSceenPos = gazePoint.textureCoord;
+        Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
+
+        Vector3 hitPos;
+        if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange))
         {
-            _timePassed += Time.deltaTime;
-            _averageGazeDistance = Mathf.Lerp(_lastStableDistance, 0f, _timePassed / _resetTime);
-            if (_timePassed > _resetTime)
-            {
-                _isResetting = false;
-            }
+            hitPos = hit.point;
         }
         else
         {
-            _gazeSceenPos = gazePoint.textureCoord;
-            Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
-
-            Vector3 hitPos;
-            if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange))
-            {
-                hitPos = hit.point;
-            }
-            else
-            {
-                Debug.Log("Looking outside range");
-                hitPos = gazePoint.point + (magRay.direction * _gazeRange);
-            }
-
-            _sampledPoints[_frameIndex] = hitPos;
-
-            eyeVelocity = Vector3.Distance(_lastDotPos, hitPos) / Time.deltaTime;
-            int k = (int) Mathf.Min(_numFramesToSample * (eyeVelocity * _sensitivity), _numFramesToSample);
-
-            Vector3 dotPos = Vector3.zero;
-            _frameIndex = (_frameIndex + 1) % _numFramesToSample;
-
-            int i = _frameIndex - k;
-
-            if (i < 0)
-            {
-                i += _numFramesToSample;
-            }
-            Debug.Assert(i >= 0 && i < _numFramesToSample, "Position average error: i is " + i);
-
-            int samplesUsed = 0;
-            do
-            {
-                dotPos += _sampledPoints[i];
-                i = (i + 1) % _numFramesToSample;
-                samplesUsed++;
-            }
-            while (samplesUsed < k);
-            dotPos /= k;
-            _averageDot.position = dotPos - (0.1f * magRay.direction);
-
-            _averageDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
-
-            // Reset zoom on left trigger click
-            if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.LeftHand].stateDown)
-            {
-                _isResetting = true;
-                _frameIndex = 0;
-                _timePassed = 0f;
-                _lastStableDistance = _averageGazeDistance;
-            }
+            Debug.Log("Looking outside range");
+            hitPos = gazePoint.point + (magRay.direction * _gazeRange);
         }
+
+        _sampledPoints[_frameIndex] = hitPos;
+
+        float eyeVelocity = Vector3.Distance(_lastDotPos, hitPos) / Time.deltaTime;
+        int k = (int) Mathf.Min(_numFramesToSample * (eyeVelocity * _sensitivity), _numFramesToSample);
+
+        Vector3 dotPos = Vector3.zero;
+        _frameIndex = (_frameIndex + 1) % _numFramesToSample;
+
+        int i = _frameIndex - k;
+
+        if (i < 0)
+        {
+            i += _numFramesToSample;
+        }
+        Debug.Assert(i >= 0 && i < _numFramesToSample, "Position average error: i is " + i);
+
+        int samplesUsed = 0;
+        do
+        {
+            dotPos += _sampledPoints[i];
+            i = (i + 1) % _numFramesToSample;
+            samplesUsed++;
+        }
+        while (samplesUsed < k);
+        dotPos /= k;
+        _averageDot.position = dotPos - (0.1f * magRay.direction);
+
+        _averageDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
 
         Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
         float distToDot = Vector3.Distance(eyeBallPos, _averageDot.position);
@@ -250,7 +228,7 @@ public class GazeMagnifier : IMagnifier
                 _debugText.color = Color.green;
             }
 
-            _debugText.text = "Sensitivity: " + _sensitivity + "\nConvergence Speed: " + _distMultiplier + "\nMagnification: " + magnification;
+            _debugText.text = "Sensitivity: " + _sensitivity + "\nDist. multiplier: " + _distMultiplier + "\nMagnification: " + magnification;
         }
         _lastMag = magnification;
         _timeAtLastSample = Time.time;
