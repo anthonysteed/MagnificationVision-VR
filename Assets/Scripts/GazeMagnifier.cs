@@ -7,6 +7,8 @@ using Valve.VR;
 
 public class GazeMagnifier : IMagnifier
 {
+    private const float SAMPLE_ALPHA = 0.02f;
+
     private Transform _player;
 
     private Transform _magGlass;
@@ -19,7 +21,7 @@ public class GazeMagnifier : IMagnifier
 
     private float _sensitivity = 0.027f;
 
-    private float _distMultiplier = 0.12f;
+    private float _distMultiplier = 0.2f;
 
     private float _idleResetTime = 1f;
 
@@ -74,6 +76,8 @@ public class GazeMagnifier : IMagnifier
     private LineRenderer[] _dotRenderers;
 
     private Camera _magCamera;
+
+    private float _oldAverageDist;
 
 
     public GazeMagnifier(Transform player, Transform magGlass, Text debugText)
@@ -212,7 +216,9 @@ public class GazeMagnifier : IMagnifier
             }
             while (samplesUsed < k);
             dotPos /= k;
-            _averageDot.position = dotPos;
+            _averageDot.position = dotPos - (0.1f * magRay.direction);
+
+            _averageDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
 
             // Reset zoom on left trigger click
             if (SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.LeftHand].stateDown)
@@ -258,15 +264,10 @@ public class GazeMagnifier : IMagnifier
 
         _sampledDistances[_inertialFrameIndex] = currentDist;
 
-        int k = (int)Mathf.Min(_numInertialFramesToSample * (eyeVelocity * _sensitivity), _numInertialFramesToSample);
         float averageDist = 0f;
         _inertialFrameIndex = (_inertialFrameIndex + 1) % _numInertialFramesToSample;
 
-        int i = _inertialFrameIndex - k;
-        if (i < 0)
-        {
-            i += _numInertialFramesToSample;
-        }
+        int i = _inertialFrameIndex;
         Debug.Assert(i >= 0 && i < _numInertialFramesToSample, "Distance average error: i is " + i);
 
         int samplesUsed = 0;
@@ -276,8 +277,14 @@ public class GazeMagnifier : IMagnifier
             i = (i + 1) % _numInertialFramesToSample;
             samplesUsed++;
         }
-        while (samplesUsed < k);
-        averageDist /= k;
+        while (samplesUsed < _numInertialFramesToSample);
+
+        averageDist /= _numInertialFramesToSample;
+
+        // exponential moving average
+        averageDist = (averageDist * SAMPLE_ALPHA) + ((1 - SAMPLE_ALPHA) * _oldAverageDist);
+        _oldAverageDist = averageDist;
+
         return averageDist;
     }
 

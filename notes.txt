@@ -1,7 +1,6 @@
 # TO-DO:
 
-* render gaze dot with 30-frame sampled average, but create a second moving average of distance multipliers
- (so magnification slowly converges to current gaze distance)
+* adjust mag. distance average to weigh more recent samples less? (to slow down convergence to point far away)
 * augment mag camera rotation with gaze rotation (play around with how much)
 * teleportation to dot position with button click/hold
 
