@@ -1,8 +1,19 @@
 # TO-DO:
 
-* teleportation to dot position with button click/hold
+* refactor code for readability
+* ensure zoom always reset after looked away from glass (after ~2 sec)
+* create 5 objects to find
+* bring up menu/checklist of items on left trigger click (trigger release --> menu disappears)
+* make objects sparkle/disappear when gazed at for >2 sec
+* implement standard SteamVR teleport
 
-* more reliable (and fast) zoom-out
-* augment mag camera rotation with gaze rotation (play around with how much)
-
-* stretch: activate mag glass only if hands align
+* improve gaze teleport:
+	* set teleportation such that appearing inside objects is impossible (teleport some epsilon away from collider)
+	* do not allow teleporting to above-eye heights
+	* add visual indication to dot of valid/invalid teleportation spots
+	* add progress bar to dot to indicate pending teleport
+	
+	
+* prepare scene:
+	* ensure all objects have colliders
+	* 

@@ -7,7 +7,7 @@ using Valve.VR;
 
 public class GazeMagnifier : IMagnifier
 {
-    private const float SAMPLE_ALPHA = 0.02f;
+    private const float SAMPLE_ALPHA = 0.05f;
 
     private Transform _player;
 
@@ -23,7 +23,7 @@ public class GazeMagnifier : IMagnifier
 
     private float _sensitivity = 0.027f;
 
-    private float _distMultiplier = 0.2f;
+    private float _distMultiplier = 0.8f;
 
     private float _idleResetTime = 1f;
 
@@ -118,6 +118,7 @@ public class GazeMagnifier : IMagnifier
         {
             // Reset
             _frameIndex = 0;
+            _inertialFrameIndex = 0;
         }
 
         foreach (LineRenderer renderer in _dotRenderers)
