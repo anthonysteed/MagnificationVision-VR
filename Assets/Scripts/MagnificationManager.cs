@@ -8,18 +8,13 @@ using UnityEngine.UI;
 using UnityEngine.XR;
 using Valve.VR;
 
-public class MagnifyingRect : MonoBehaviour
+public class MagnificationManager : MonoBehaviour
 {
     public enum MagnificationMode { NATURAL, GAZE, COMBINED }
 
     [SerializeField]
     private MagnificationMode _mode;
 
-    [SerializeField]
-    private bool _debugMode = true;
-
-    [SerializeField]
-    private GameObject _rectObject;
 
     [SerializeField]
     private float _rectHeight = 0.2f;
@@ -27,32 +22,23 @@ public class MagnifyingRect : MonoBehaviour
     [SerializeField]
     private float _offsetFromHands = 0.1f;
 
-    [SerializeField]
-    private Camera _magnifyingCamera;
+    private Transform _magRect;
 
-    [SerializeField]
-    private float _thresholdAngle = 40f;
-
-    [SerializeField]
-    private GameObject _debugCanvas;
+    private Camera _magCamera;
 
     private IMagnifier _magnifier;
 
-    private Transform _playerTransform;
+    private Transform _player;
+
+    private GazeTeleport _gazeTeleport;
 
     private Transform _leftHand;
 
     private Transform _rightHand;
 
-    private Gazeable _rectGazeable;
-
-    private Coroutine _fadeCoroutine;
-
-    private LerpAlpha[] _lerpAlphas;
+    private LerpAlpha[] _rectFadeEffects;
 
     private RaycastHit? _gazeGlassIntersection;
-
-    private Text _debugText;
 
     private bool _isActive = false;
 
@@ -62,14 +48,14 @@ public class MagnifyingRect : MonoBehaviour
 
     private void Awake()
     {
-        _playerTransform = Camera.main.transform;
-        _standardFov = _magnifyingCamera.fieldOfView;
-        _rectGazeable = _rectObject.GetComponentInChildren<Gazeable>();
-        _lerpAlphas = _rectObject.GetComponentsInChildren<LerpAlpha>();
+        _magRect = GameObject.FindGameObjectWithTag("MagRect").transform;
+        _player = Camera.main.transform;
+        _magCamera = GetComponentInChildren<Camera>();
+        _standardFov = _magCamera.fieldOfView;
+        _rectFadeEffects = _magRect.GetComponentsInChildren<LerpAlpha>();
+        _gazeTeleport = GetComponent<GazeTeleport>();
 
-        _debugText = _debugCanvas.GetComponentInChildren<Text>();
-
-        _magnifier = AssignMagMode();
+        AssignMagMode();
     }
 
     private void Start()
@@ -77,18 +63,20 @@ public class MagnifyingRect : MonoBehaviour
         ToggleMagnification(false);
     }
 
-    private IMagnifier AssignMagMode()
+    private void AssignMagMode()
     {
         switch (_mode)
         {
             case MagnificationMode.NATURAL:
-                return new NaturalMagnifier(_playerTransform, _rectObject.transform, _debugText);
+                _magnifier = GetComponent<NaturalMagnifier>();
+                break;
             case MagnificationMode.GAZE:
-                return new GazeMagnifier(_playerTransform, _rectObject.transform, _debugText);
+                _magnifier = GetComponent<GazeMagnifier>();
+                break;
             case MagnificationMode.COMBINED:
-                return new CombinedMagnifier(_playerTransform, _rectObject.transform, _debugText);
+                _magnifier = GetComponent<CombinedMagnifier>();
+                break;
         }
-        return null;
     }
 
     private bool AreHandsAlive()
@@ -96,11 +84,11 @@ public class MagnifyingRect : MonoBehaviour
         return _leftHand && _rightHand;
     }
 
-    private void FindGazeGlassIntersection()
+    private void FindGazeRectIntersection()
     {
         TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
         RaycastHit screenHit;
-        if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out screenHit, 10f) && screenHit.collider.transform == _rectObject.transform)
+        if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out screenHit, 10f) && screenHit.collider.transform == _magRect)
         {
             _gazeGlassIntersection = screenHit;
         }
@@ -112,12 +100,10 @@ public class MagnifyingRect : MonoBehaviour
 
     private void ToggleMagnification(bool isEnabled)
     {
-        foreach (LerpAlpha la in _lerpAlphas)
+        foreach (LerpAlpha la in _rectFadeEffects)
         {
             la.Fade(isEnabled);
         }
-
-        //_debugCanvas.gameObject.SetActive(isEnabled && _debugMode);
         _isActive = isEnabled;
     }
 
@@ -148,16 +134,14 @@ public class MagnifyingRect : MonoBehaviour
             pose.GetComponentInChildren<Renderer>().enabled = false;
             ToggleMagnification(false);
         }
-
     } 
 
     private void Update()
     {
-        // 
         if (AreHandsAlive())
         {
             UpdateRectDimensions();
-            FindGazeGlassIntersection();
+            FindGazeRectIntersection();
             if (_gazeGlassIntersection.HasValue && !_isActive)
             {
                 ToggleMagnification(true);
@@ -169,13 +153,9 @@ public class MagnifyingRect : MonoBehaviour
         }
 
         UpdateCameraTransform();
-        if (_isActive)
+        if (_isActive && !_gazeTeleport.IsTeleportPending)
         {
-            _magnifyingCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_gazeGlassIntersection.Value, _planeNormal, _debugMode);
-        }
-        if (_debugMode)
-        {
-            UpdateDebugCanvas();
+            _magCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_gazeGlassIntersection.Value, _planeNormal);
         }
     }
 
@@ -185,35 +165,28 @@ public class MagnifyingRect : MonoBehaviour
         Transform rightTrans = _rightHand.transform;
         float width = Vector3.Distance(leftTrans.position, rightTrans.position) - _offsetFromHands;
 
-        _rectObject.transform.localScale = new Vector3(width, _rectHeight, 1f);
-        _magnifyingCamera.aspect = width / _rectHeight;
-        _rectObject.transform.position = (leftTrans.position + rightTrans.position) / 2f;
+        _magRect.localScale = new Vector3(width, _rectHeight, 1f);
+        _magCamera.aspect = width / _rectHeight;
+        _magRect.position = (leftTrans.position + rightTrans.position) / 2f;
 
         Vector3 upDir = leftTrans.forward + rightTrans.forward;
         Vector3 rightDir = rightTrans.position - leftTrans.position;
-        //if (Vector3.Angle(leftTrans.forward, rightDir) < _thresholdAngle && _rectGazeable.HasFocus)
 
         _planeNormal = Vector3.Cross(rightDir, upDir);
-        _rectObject.transform.rotation = Quaternion.LookRotation(_planeNormal, upDir);
+        _magRect.rotation = Quaternion.LookRotation(_planeNormal, upDir);
     }
 
     private void UpdateCameraTransform()
     {
-        _magnifyingCamera.transform.position = _rectObject.transform.position;
-        _magnifyingCamera.transform.rotation = Quaternion.LookRotation(_playerTransform.forward);
-    }
-
-    private void UpdateDebugCanvas()
-    {
-        _debugCanvas.transform.position = _rectObject.transform.position;
-        _debugCanvas.transform.rotation = Quaternion.LookRotation(_playerTransform.forward, _playerTransform.up);
+        _magCamera.transform.position = _magRect.position;
+        _magCamera.transform.rotation = Quaternion.LookRotation(_player.forward);
     }
 
     private void OnValidate()
     {
-        if (Application.isPlaying && _playerTransform != null)
+        if (Application.isPlaying && _player != null)
         {
-            _magnifier = AssignMagMode();
+            AssignMagMode();
         }
     }
 

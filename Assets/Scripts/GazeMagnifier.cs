@@ -5,169 +5,106 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valve.VR;
 
-public class GazeMagnifier : IMagnifier
+public class GazeMagnifier : MonoBehaviour, IMagnifier
 {
-    private const float SAMPLE_ALPHA = 0.05f;
+    public Vector3 LastGazePos { get; private set; }
+
+    // How much to weigh the most recently sampled gaze distance
+    [SerializeField]
+    private float _sampleAlpha = 0.05f;
+
+    // Max. distance of gaze ray
+    [SerializeField]
+    private float _gazeRange = 500f;
+
+    [SerializeField]
+    private float _distMultiplier = 0.8f;
+    
+    // How long after looking away to wait before reset magnification
+    [SerializeField]
+    private float _idleResetTime = 1f;
+
+    // How many frames (n) position of gaze dot is determined from
+    [SerializeField]
+    private int _numFramesToSample = 30;
 
     private Transform _player;
 
-    private TeleportPerson _playerToTeleport;
-
-    private Transform _magGlass;
-
-    // private Transform _gazeDot;
-
-    private Text _debugText;
-
-    private float _gazeRange = 500f;
-
-    private float _sensitivity = 0.027f;
-
-    private float _distMultiplier = 0.8f;
-
-    private float _idleResetTime = 1f;
+    private Transform _magRect;
 
     private float _timeAtLastSample;
 
-    private bool _isResetting = false;
-
-    private float _lastGazeDistance = 0f;
-
-    private float _averageGazeDistance;
-
+    // World space pos. of gaze dot last frame
     private Vector3 _lastDotPos;
 
-    private Vector3 _targetDotPos;
+    // How many frames to weigh average gaze distance from; defined in awake as 3n
+    private int _numInertialFramesToSample;
 
-    private const int _numFramesToSample = 30;
-
-    private int _numInertialFramesToSample = _numFramesToSample * 3;
-
-    private int _frameIndex = 0;
-
-    private int _inertialFrameIndex = 0;
-
+    // Sampled world space gaze pos. for last n frames (stored as ring buffer)
     private Vector3[] _sampledPoints;
 
+    // Index in sampled points of most recent sample (always mod n)
+    private int _frameIndex = 0;
+
+    // Sampled distances between player pos. and gaze pos. (stored as ring buffer)
     private float[] _sampledDistances;
 
-    private Vector3 _averageDirection;
+    // Index in sampled distances of most recent sample (mod 3n)
+    private int _inertialFrameIndex = 0;
 
-    private float _lastStableDistance;
-
-    private float _resetTime = 1f;
-
-    private float _timePassed = 0f;
-
-    private float _lastMag = 0f;
-
-    private Vector3 _gazeSceenPos;
-
-    private Vector3? _teleportCandidate;
-
-    private Vector3 _lastPos;
-
-    private float _holdDownTime = 0f;
-
-    private Transform _screnDot;
-
-    private Transform _worldDot;
+    private bool _isMagActive = false;
 
     private Transform _averageDot;
 
-    private LineRenderer[] _dotRenderers;
-
     private Camera _magCamera;
 
+    // Avg. gaze distance calculated last frame
     private float _oldAverageDist;
 
-
-    public GazeMagnifier(Transform player, Transform magGlass, Text debugText)
+    private void Awake()
     {
-        _player = player;
-        _playerToTeleport = player.GetComponent<TeleportPerson>();
-        _magGlass = magGlass;
-        _debugText = debugText;
+        _magRect = GameObject.FindGameObjectWithTag("MagRect").transform;
+        _player = Camera.main.transform;
+
         _timeAtLastSample = Time.time;
 
-        _averageDirection = Vector3.zero;
+        _averageDot = GameObject.FindGameObjectWithTag("GazeDot")?.transform;
 
-        _screnDot = GameObject.FindGameObjectWithTag("GazeDotScreen")?.transform;
-        _worldDot = GameObject.FindGameObjectWithTag("GazeDotWorld")?.transform;
-        _averageDot = GameObject.FindGameObjectWithTag("AverageDot")?.transform;
+        _magCamera = _magRect.GetComponentInChildren<Camera>();
 
-        _magCamera = magGlass.GetComponentInChildren<Camera>();
+        _numInertialFramesToSample = _numFramesToSample * 3;
 
         _sampledPoints = new Vector3[_numFramesToSample];
         _sampledDistances = new float[_numInertialFramesToSample];
-
-        _dotRenderers = new LineRenderer[] { _screnDot.GetComponent<LineRenderer>(), _worldDot.GetComponent<LineRenderer>() };
-        foreach (LineRenderer renderer in _dotRenderers)
-        {
-            renderer.enabled = false;
-        }
-        //if (_gazeDot == null)
-        //{
-        //    Debug.LogError("Couldn't find gaze dot");
-        //}
     }
 
-    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal, bool debugMode)
+    private void Update()
     {
-        if (Time.time - _timeAtLastSample > _idleResetTime)
+        if (Time.time - _timeAtLastSample > _idleResetTime && _isMagActive)
         {
             // Reset
+            _isMagActive = false;
             _frameIndex = 0;
             _inertialFrameIndex = 0;
-        }
 
-        foreach (LineRenderer renderer in _dotRenderers)
-        {
-            renderer.enabled = true;
+            for (int i = 0; i < _numFramesToSample; i++)
+            {
+                _sampledPoints[i] = Vector3.zero;
+            }
+            for (int i = 0; i < _numInertialFramesToSample; i++)
+            {
+                _sampledDistances[i] = 0f;
+            }
         }
+    }
 
-        if (debugMode)
-        {
-            // Adjust parameters with touchpad
-            ISteamVR_Action_Vector2 rightHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand];
-            if (rightHandTouch.axis.y != 0f && rightHandTouch.lastAxis.y != 0f)
-            {
-               _distMultiplier += rightHandTouch.delta.y * 0.1f;
-            }
-            ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
-            if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
-            {
-                _sensitivity += leftHandTouch.delta.y * 0.1f;
-            }
-        }
-        SteamVR_Action_Boolean_Source triggerDown = SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand];
-        if (triggerDown.state)
-        {
-            if (!_teleportCandidate.HasValue)
-            {
-                _teleportCandidate = _averageDot.position;
-                Debug.Log("Pending teleport...");
-            }
-            _holdDownTime += Time.deltaTime;
-            if (_holdDownTime >= 2f)
-            {
-                // Start teleport
-                Debug.Log("Teleporting to " + _teleportCandidate.Value);
-                _playerToTeleport.Teleport(_teleportCandidate.Value);
-                _teleportCandidate = null;
-                _holdDownTime = 0f;
-            }
-            return _lastMag;
-        }
-        else if (_teleportCandidate.HasValue)
-        {
-            Debug.Log("Released teleport trigger after " + _holdDownTime + " seconds");
-            _teleportCandidate = null;
-            _holdDownTime = 0f;
-        }
+    // Called every frame when magnification active
+    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal)
+    {
+        _isMagActive = true;
 
-        _gazeSceenPos = gazePoint.textureCoord;
-        Ray magRay = _magCamera.ViewportPointToRay(_gazeSceenPos);
+        Vector3 gazeSceenPos = gazePoint.textureCoord;
+        Ray magRay = _magCamera.ViewportPointToRay(gazeSceenPos);
 
         Vector3 hitPos;
         if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange))
@@ -183,19 +120,12 @@ public class GazeMagnifier : IMagnifier
         _sampledPoints[_frameIndex] = hitPos;
 
         float eyeVelocity = Vector3.Distance(_lastDotPos, hitPos) / Time.deltaTime;
-        int k = (int) Mathf.Min(_numFramesToSample * (eyeVelocity * _sensitivity), _numFramesToSample);
 
         Vector3 dotPos = Vector3.zero;
         _frameIndex = (_frameIndex + 1) % _numFramesToSample;
 
-        int i = _frameIndex - k;
-
-        if (i < 0)
-        {
-            i += _numFramesToSample;
-        }
+        int i = _frameIndex;
         Debug.Assert(i >= 0 && i < _numFramesToSample, "Position average error: i is " + i);
-
         int samplesUsed = 0;
         do
         {
@@ -203,35 +133,18 @@ public class GazeMagnifier : IMagnifier
             i = (i + 1) % _numFramesToSample;
             samplesUsed++;
         }
-        while (samplesUsed < k);
-        dotPos /= k;
+        while (samplesUsed < _numFramesToSample);
+        dotPos /= _numFramesToSample;
         _averageDot.position = dotPos - (0.1f * magRay.direction);
-
         _averageDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
+
+        LastGazePos = _averageDot.position;
 
         Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
         float distToDot = Vector3.Distance(eyeBallPos, _averageDot.position);
 
         float magnification = 1f + (GetWeightedAverageDist(distToDot, eyeVelocity) * _distMultiplier);
 
-        if (debugMode)
-        {
-            if (_isResetting)
-            {
-                _debugText.color = Color.yellow;
-            }
-            else if (magnification < 1f)
-            {
-                _debugText.color = Color.red;
-            }
-            else
-            {
-                _debugText.color = Color.green;
-            }
-
-            _debugText.text = "Sensitivity: " + _sensitivity + "\nDist. multiplier: " + _distMultiplier + "\nMagnification: " + magnification;
-        }
-        _lastMag = magnification;
         _timeAtLastSample = Time.time;
         return magnification;
     }
@@ -261,7 +174,7 @@ public class GazeMagnifier : IMagnifier
         averageDist /= _numInertialFramesToSample;
 
         // exponential moving average
-        averageDist = (averageDist * SAMPLE_ALPHA) + ((1 - SAMPLE_ALPHA) * _oldAverageDist);
+        averageDist = (averageDist * _sampleAlpha) + ((1 - _sampleAlpha) * _oldAverageDist);
         _oldAverageDist = averageDist;
 
         return averageDist;

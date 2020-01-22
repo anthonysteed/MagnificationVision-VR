@@ -4,60 +4,32 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valve.VR;
 
-public class NaturalMagnifier : IMagnifier
+public class NaturalMagnifier : MonoBehaviour, IMagnifier
 {
+    // Virtual image distance of mag. glass
+    [SerializeField]
     private float _imageDistance = 1.4f;
 
+    [SerializeField]
     private float _focalLength = 0.23f;
 
     private Transform _player;
 
-    private Transform _magGlass;
+    private Transform _magRect;
 
-    private Text _debugText;
-
-    public NaturalMagnifier(Transform player, Transform magGlass, Text debugText)
+    private void Awake()
     {
-        _player = player;
-        _magGlass = magGlass;
-        _debugText = debugText;
-        _debugText.alignment = TextAnchor.UpperLeft;
+        _player = Camera.main.transform;
+        _magRect = GameObject.FindGameObjectWithTag("MagRect").transform;
     }
 
-    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal, bool debugMode)
-    {
-        if (debugMode)
-        {
-            // Adjust parameters with touchpad
-            ISteamVR_Action_Vector2 rightHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand];
-            if (rightHandTouch.axis.y != 0f && rightHandTouch.lastAxis.y != 0f)
-            {
-                _imageDistance += rightHandTouch.delta.y;
-            }
-            ISteamVR_Action_Vector2 leftHandTouch = SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.LeftHand];
-            if (leftHandTouch.axis.y != 0f && leftHandTouch.lastAxis.y != 0f)
-            {
-                _focalLength += leftHandTouch.delta.y;
-            }
-        }
 
-        float eyeDistance = Vector3.Distance(_player.position, _magGlass.transform.position);
+    public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal)
+    {
+        float eyeDistance = Vector3.Distance(_player.position, _magRect.transform.position);
         float realImageDistance = Mathf.Abs(eyeDistance - _imageDistance);
 
         float magnification = (0.25f / eyeDistance) * (1 + ((realImageDistance - eyeDistance) / _focalLength));
-
-        if (debugMode)
-        {
-            if (magnification < 1f)
-            {
-                _debugText.color = Color.red;
-            }
-            else
-            {
-                _debugText.color = Color.green;
-            }
-            _debugText.text = "Image distance: " + _imageDistance + "\nFocal length: " + _focalLength + "\nEye distance: " + eyeDistance + "\nMagnification: " + magnification;
-        }
 
         return magnification;
     }
