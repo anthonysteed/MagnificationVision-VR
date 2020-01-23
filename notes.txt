@@ -1,7 +1,6 @@
 # TO-DO:
 
 * bring up menu/checklist of items on left trigger click (trigger release --> menu disappears)
-* make objects sparkle/disappear when gazed at for >2 sec
 * implement standard SteamVR teleport
 
 * improve gaze teleport:
