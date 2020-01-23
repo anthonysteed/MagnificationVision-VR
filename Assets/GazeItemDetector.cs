@@ -13,6 +13,8 @@ public class GazeItemDetector : MonoBehaviour
 
     private HiddenItem _gazedAtItem;
 
+    private Queue<Collider> _gazeCandidates;
+
     private bool _isDiscoveryPending = false;
 
     private float _timeGazed = 0f;
@@ -24,7 +26,7 @@ public class GazeItemDetector : MonoBehaviour
     }
 
     // Or null
-    private HiddenItem FindCurrentGazedAtItem()
+    private HiddenItem GetCurrentGazedAtItem()
     {
         if (_magManager.IsMagnifying)
         {
@@ -48,9 +50,11 @@ public class GazeItemDetector : MonoBehaviour
     }
 
 
+
+
     private void Update()
     {
-        HiddenItem item = FindCurrentGazedAtItem();   
+        HiddenItem item = GetCurrentGazedAtItem();   
 
         if (_isDiscoveryPending)
         {
@@ -77,8 +81,6 @@ public class GazeItemDetector : MonoBehaviour
         }
 
     }
-
-
 
 
 }

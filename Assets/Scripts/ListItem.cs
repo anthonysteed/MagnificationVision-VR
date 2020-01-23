@@ -10,9 +10,11 @@ public class ListItem : MonoBehaviour
 
     public bool Found { get; private set; }
 
-    private Image _icon;
+    private RawImage _icon;
 
     private Image _checkmark;
+
+    private Text _itemText;
 
     private void OnEnable()
     {
@@ -21,7 +23,8 @@ public class ListItem : MonoBehaviour
 
     private void Awake()
     {
-            
+        _itemText = GetComponentInChildren<Text>();
+        _checkmark = GetComponentInChildren<Image>();
     }
 
     private void OnItemFound(HiddenItem.Type type)
@@ -30,7 +33,9 @@ public class ListItem : MonoBehaviour
         {
             // TODO
             Found = true;
+            _itemText.color = Color.green;
             Debug.Log(type + " was found");
+            _checkmark.enabled = true;
         }
     }
 

@@ -56,6 +56,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
     private bool _isMagActive = false;
 
+    private MagnificationManager _magManager;
+
     private Transform _averageDot;
 
     private Camera _magCamera;
@@ -66,6 +68,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     private void Awake()
     {
         _magRect = GameObject.FindGameObjectWithTag("MagRect").transform;
+        _magManager = GetComponent<MagnificationManager>();
         _player = Camera.main.transform;
 
         _timeAtLastSample = Time.time;
@@ -105,7 +108,12 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     // Called every frame when magnification active
     public float GetMagnification(RaycastHit gazePoint, Vector3 planeNormal)
     {
-        _isMagActive = true;
+        if (!_isMagActive)
+        {
+            _isMagActive = true;
+            _lastDotPos = _magManager.LastWorldGazePos;
+            _oldAverageDist = Vector3.Distance(_player.position, _lastDotPos);
+        }
 
         Vector3 gazeSceenPos = gazePoint.textureCoord;
         Ray magRay = _magCamera.ViewportPointToRay(gazeSceenPos);
