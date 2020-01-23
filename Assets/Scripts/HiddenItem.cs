@@ -12,19 +12,36 @@ public class HiddenItem : MonoBehaviour
     [SerializeField]
     private Type _type;
 
-    private Collider _collider;
+    private LerpAlpha _lerpAlpha;
+
+    private ParticleSystem _particles;
+
+    private bool _hasBeenDiscovered = false;
 
     private void Awake()
     {
-        _collider = GetComponent<Collider>();
+        _lerpAlpha = GetComponent<LerpAlpha>();
+        _particles = GetComponentInChildren<ParticleSystem>();
     }
 
-    public void Reveal()
+    public void Discover()
     {
-        // TODO
-        _collider.enabled = false;
+        if (_hasBeenDiscovered)
+        {
+            return;
+        }
+        // TODO: Sound effect
+        _hasBeenDiscovered = true;
         OnItemFound(_type);
+        StartCoroutine(FadeEffect());
+    }
 
+    private IEnumerator FadeEffect()
+    {
+        _lerpAlpha.FadeWithEmission();
+        yield return null;
+        Destroy(gameObject, 4f);
+        _particles?.Play();
     }
 
 

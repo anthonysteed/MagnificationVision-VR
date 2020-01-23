@@ -30,6 +30,7 @@ public class ListItem : MonoBehaviour
         {
             // TODO
             Found = true;
+            Debug.Log(type + " was found");
         }
     }
 

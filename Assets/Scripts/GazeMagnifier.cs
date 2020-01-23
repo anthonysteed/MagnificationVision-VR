@@ -9,6 +9,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 {
     public Vector3 LastGazePos { get; private set; }
 
+    public Collider LastGazeTarget { get; private set; }
+
     // How much to weigh the most recently sampled gaze distance
     [SerializeField]
     private float _sampleAlpha = 0.05f;
@@ -86,6 +88,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
             _isMagActive = false;
             _frameIndex = 0;
             _inertialFrameIndex = 0;
+            _lastDotPos = _player.position;
+            _oldAverageDist = 0f;
 
             for (int i = 0; i < _numFramesToSample; i++)
             {
@@ -110,6 +114,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange))
         {
             hitPos = hit.point;
+            LastGazeTarget = hit.collider;
         }
         else
         {

@@ -12,6 +12,10 @@ public class LerpAlpha : MonoBehaviour
 
     private Renderer _renderer;
 
+    private int _emissionId;
+
+    private Color _startEmission;
+
     private float _startAlpha;
 
     private bool _isFading = false;
@@ -30,6 +34,9 @@ public class LerpAlpha : MonoBehaviour
             color.a = 0f;
             _renderer.material.color = color;
         }
+
+        _emissionId = Shader.PropertyToID("_EmissionColor");
+        _startEmission = _renderer.material.GetColor(_emissionId);
     }
 
     private void Update()
@@ -59,7 +66,24 @@ public class LerpAlpha : MonoBehaviour
             _timePassed = 0f;
             _isFading = false;
         }
-        
+    }
+
+    public void FadeWithEmission()
+    {
+        StartCoroutine(EmissionEffect());
+    }
+
+    private IEnumerator EmissionEffect()
+    {
+        float emissionTime = 0f;
+        while (emissionTime <= 1f)
+        {
+            emissionTime += Time.deltaTime;
+            _renderer.material.SetColor(_emissionId, Color.Lerp(_startEmission, Color.white, emissionTime));
+            _renderer.material.EnableKeyword("_EMISSION");
+            yield return null;
+        }
+        Fade(false);
     }
 
     public void Fade(bool fadeIn)

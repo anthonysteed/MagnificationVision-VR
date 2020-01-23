@@ -10,11 +10,16 @@ using Valve.VR;
 
 public class MagnificationManager : MonoBehaviour
 {
+    public bool IsMagnifying { get { return _isActive; } }
+
+    public Collider LastGazeTarget { get; private set; }
+
+    public Vector3 LastWorldGazePos { get; private set; }
+
     public enum MagnificationMode { NATURAL, GAZE, COMBINED }
 
     [SerializeField]
     private MagnificationMode _mode;
-
 
     [SerializeField]
     private float _rectHeight = 0.2f;
@@ -38,7 +43,7 @@ public class MagnificationManager : MonoBehaviour
 
     private LerpAlpha[] _rectFadeEffects;
 
-    private RaycastHit? _gazeGlassIntersection;
+    private RaycastHit? _gazeRectIntersection;
 
     private bool _isActive = false;
 
@@ -87,14 +92,21 @@ public class MagnificationManager : MonoBehaviour
     private void FindGazeRectIntersection()
     {
         TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
-        RaycastHit screenHit;
-        if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out screenHit, 10f) && screenHit.collider.transform == _magRect)
+        if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out RaycastHit hit, 10f))
         {
-            _gazeGlassIntersection = screenHit;
+            if (hit.collider.transform == _magRect)
+            {
+                _gazeRectIntersection = hit;
+            }
+            else
+            {
+                LastGazeTarget = hit.collider;
+                LastWorldGazePos = hit.point;
+            }
         }
         else
         {
-            _gazeGlassIntersection = null;
+            _gazeRectIntersection = null;
         }
     }
 
@@ -142,11 +154,11 @@ public class MagnificationManager : MonoBehaviour
         {
             UpdateRectDimensions();
             FindGazeRectIntersection();
-            if (_gazeGlassIntersection.HasValue && !_isActive)
+            if (_gazeRectIntersection.HasValue && !_isActive)
             {
                 ToggleMagnification(true);
             }
-            else if (!_gazeGlassIntersection.HasValue && _isActive)
+            else if (!_gazeRectIntersection.HasValue && _isActive)
             {
                 ToggleMagnification(false);
             }
@@ -155,7 +167,7 @@ public class MagnificationManager : MonoBehaviour
         UpdateCameraTransform();
         if (_isActive && !_gazeTeleport.IsTeleportPending)
         {
-            _magCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_gazeGlassIntersection.Value, _planeNormal);
+            _magCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_gazeRectIntersection.Value, _planeNormal);
         }
     }
 
