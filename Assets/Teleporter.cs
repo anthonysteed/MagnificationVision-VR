@@ -8,6 +8,7 @@ using Valve.VR.InteractionSystem;
 
 public class Teleporter : MonoBehaviour
 {
+
     [SerializeField]
     private float _fadeTime = 0.5f;
 
@@ -21,6 +22,10 @@ public class Teleporter : MonoBehaviour
     private Transform _aimAnchor;
 
     private TeleportArc _arc;
+
+    private TeleportPoint _teleportMarker;
+
+    private TeleportMarkerCollider _markerCollider;
 
     private SteamVR_Behaviour_Pose _handPose;
 
@@ -36,8 +41,13 @@ public class Teleporter : MonoBehaviour
         _player = Camera.main.transform;
         _playSpace = _player.parent;
         _arc = GetComponentInChildren<TeleportArc>();
-        _arc.traceLayerMask = ~0;
+        _teleportMarker = FindObjectOfType<TeleportPoint>();
+        _markerCollider = _teleportMarker.GetComponentInChildren<TeleportMarkerCollider>();
+        _arc.traceLayerMask = ~(1 << 13); // ignore teleport marker
         _aimAnchor = _arc.transform;
+
+        _teleportMarker.SetAlpha(0f, 0f);
+
     }
 
     private void Update()
@@ -54,6 +64,7 @@ public class Teleporter : MonoBehaviour
         if (SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand].axis == Vector2.zero)
         {
             _arc.Hide();
+            _teleportMarker.SetAlpha(0f, 0f);
             return;
         }
 
@@ -67,13 +78,16 @@ public class Teleporter : MonoBehaviour
             _isArcTargetValid = true;
             _arc.SetColor(Color.green);
 
-            Debug.Log("hit gameobject " + hit.collider.gameObject + " with layer " + hit.collider.gameObject.layer);
+            //Debug.Log("hit gameobject " + hit.collider.gameObject + " with layer " + hit.collider.gameObject.layer);
 
+            _teleportMarker.transform.position = hit.point;
+            _teleportMarker.SetAlpha(1f, 1f);
         }
         
         if (!didHit || hit.collider.gameObject.layer != 12)
         {
             _arc.SetColor(Color.red);
+            _teleportMarker.SetAlpha(0f, 0f);
             _isArcTargetValid = false;
         }
         _arc.Show();
@@ -85,9 +99,19 @@ public class Teleporter : MonoBehaviour
         {
             return;
         }
+        Vector3 target;
+        if (_markerCollider.HasCollided)
+        {
+            target = _markerCollider.GetAdjustedPosition();
+            target.y = targetPos.y;
+        }
+        else
+        {
+            target = targetPos;
+        }
 
         Vector3 playerPos = new Vector3(_player.position.x, _playSpace.position.y, _player.position.z);
-        StartCoroutine(MovePlaySpace(targetPos - playerPos));
+        StartCoroutine(MovePlaySpace(target - playerPos));
     }
 
     private IEnumerator MovePlaySpace(Vector3 translation)

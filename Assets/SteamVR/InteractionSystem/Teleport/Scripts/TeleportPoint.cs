@@ -30,6 +30,10 @@ namespace Valve.VR.InteractionSystem
 		public Color titleLockedColor;
 		public bool playerSpawnPoint = false;
 
+		public Material VisibleMaterial;
+		public Material LockedMaterial;
+		public Material HighlightedMaterial;
+
 		//Private data
 		private bool gotReleventComponents = false;
 		private MeshRenderer markerMesh;
@@ -39,8 +43,7 @@ namespace Valve.VR.InteractionSystem
 		private MeshRenderer pointIcon;
 		private Transform lookAtJointTransform;
 		private new Animation animation;
-		private Text titleText;
-		private Player player;
+		private Transform player;
 		private Vector3 lookAtPosition = Vector3.zero;
 		private int tintColorID = 0;
 		private Color tintColor = Color.clear;
@@ -83,7 +86,7 @@ namespace Valve.VR.InteractionSystem
 		//-------------------------------------------------
 		void Start()
 		{
-			player = Player.instance;
+			player = Camera.main.transform;
 		}
 
 
@@ -92,9 +95,9 @@ namespace Valve.VR.InteractionSystem
 		{
 			if ( Application.isPlaying )
 			{
-				lookAtPosition.x = player.hmdTransform.position.x;
+				lookAtPosition.x = player.position.x;
 				lookAtPosition.y = lookAtJointTransform.position.y;
-				lookAtPosition.z = player.hmdTransform.position.z;
+				lookAtPosition.z = player.position.z;
 
 				lookAtJointTransform.LookAt( lookAtPosition );
 			}
@@ -122,11 +125,11 @@ namespace Valve.VR.InteractionSystem
 			{
 				if ( highlight )
 				{
-					SetMeshMaterials( Teleport.instance.pointHighlightedMaterial, titleHighlightedColor );
+					SetMeshMaterials( HighlightedMaterial, titleHighlightedColor );
 				}
 				else
 				{
-					SetMeshMaterials( Teleport.instance.pointVisibleMaterial, titleVisibleColor );
+					SetMeshMaterials( VisibleMaterial, titleVisibleColor );
 				}
 			}
 
@@ -153,7 +156,7 @@ namespace Valve.VR.InteractionSystem
 
 			if ( locked )
 			{
-				SetMeshMaterials( Teleport.instance.pointLockedMaterial, titleLockedColor );
+				SetMeshMaterials( LockedMaterial, titleLockedColor );
 
 				pointIcon = lockedIcon;
 
@@ -161,7 +164,7 @@ namespace Valve.VR.InteractionSystem
 			}
 			else
 			{
-				SetMeshMaterials( Teleport.instance.pointVisibleMaterial, titleVisibleColor );
+				SetMeshMaterials( VisibleMaterial, titleVisibleColor );
 
 				switch ( teleportType )
 				{
@@ -181,8 +184,6 @@ namespace Valve.VR.InteractionSystem
 						break;
 				}
 			}
-
-			titleText.text = title;
 		}
 
 
@@ -198,7 +199,6 @@ namespace Valve.VR.InteractionSystem
 			lockedIcon.material.SetColor( tintColorID, tintColor );
 
 			titleColor.a = fullTitleAlpha * alphaPercent;
-			titleText.color = titleColor;
 		}
 
 
@@ -212,7 +212,6 @@ namespace Valve.VR.InteractionSystem
 
 			titleColor = textColor;
 			fullTitleAlpha = textColor.a;
-			titleText.color = titleColor;
 		}
 
 
@@ -239,8 +238,6 @@ namespace Valve.VR.InteractionSystem
 			lockedIcon = transform.Find( "teleport_marker_lookat_joint/teleport_marker_icons/locked_icon" ).GetComponent<MeshRenderer>();
 			lookAtJointTransform = transform.Find( "teleport_marker_lookat_joint" );
 
-			titleText = transform.Find( "teleport_marker_lookat_joint/teleport_marker_canvas/teleport_marker_canvas_text" ).GetComponent<Text>();
-
 			gotReleventComponents = true;
 		}
 
@@ -253,7 +250,6 @@ namespace Valve.VR.InteractionSystem
 			moveLocationIcon = null;
 			lockedIcon = null;
 			lookAtJointTransform = null;
-			titleText = null;
 		}
 
 
@@ -273,20 +269,17 @@ namespace Valve.VR.InteractionSystem
 				moveLocationIcon.gameObject.SetActive( false );
 				switchSceneIcon.gameObject.SetActive( false );
 
-				markerMesh.sharedMaterial = Teleport.instance.pointLockedMaterial;
-				lockedIcon.sharedMaterial = Teleport.instance.pointLockedMaterial;
+				markerMesh.sharedMaterial = LockedMaterial;
+				lockedIcon.sharedMaterial = LockedMaterial;
 
-				titleText.color = titleLockedColor;
 			}
 			else
 			{
 				lockedIcon.gameObject.SetActive( false );
 
-				markerMesh.sharedMaterial = Teleport.instance.pointVisibleMaterial;
-				switchSceneIcon.sharedMaterial = Teleport.instance.pointVisibleMaterial;
-				moveLocationIcon.sharedMaterial = Teleport.instance.pointVisibleMaterial;
-
-				titleText.color = titleVisibleColor;
+				markerMesh.sharedMaterial = VisibleMaterial;
+				switchSceneIcon.sharedMaterial = VisibleMaterial;
+				moveLocationIcon.sharedMaterial = VisibleMaterial;
 
 				switch ( teleportType )
 				{
@@ -304,8 +297,6 @@ namespace Valve.VR.InteractionSystem
 						break;
 				}
 			}
-
-			titleText.text = title;
 
 			ReleaseRelevantComponents();
 		}
