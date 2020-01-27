@@ -45,9 +45,11 @@ public class Teleporter : MonoBehaviour
         _markerCollider = _teleportMarker.GetComponentInChildren<TeleportMarkerCollider>();
         _arc.traceLayerMask = ~(1 << 13); // ignore teleport marker
         _aimAnchor = _arc.transform;
+    }
 
+    private void Start()
+    {
         _teleportMarker.SetAlpha(0f, 0f);
-
     }
 
     private void Update()
@@ -78,9 +80,15 @@ public class Teleporter : MonoBehaviour
             _isArcTargetValid = true;
             _arc.SetColor(Color.green);
 
-            //Debug.Log("hit gameobject " + hit.collider.gameObject + " with layer " + hit.collider.gameObject.layer);
-
             _teleportMarker.transform.position = hit.point;
+            Vector3 markerPos;
+            if (_markerCollider.HasCollided())
+            {
+                markerPos = _markerCollider.GetAdjustedPosition();
+                markerPos.y = hit.point.y;
+                _teleportMarker.transform.position = markerPos;
+            }
+
             _teleportMarker.SetAlpha(1f, 1f);
         }
         
@@ -100,7 +108,7 @@ public class Teleporter : MonoBehaviour
             return;
         }
         Vector3 target;
-        if (_markerCollider.HasCollided)
+        if (_markerCollider.HasCollided())
         {
             target = _markerCollider.GetAdjustedPosition();
             target.y = targetPos.y;

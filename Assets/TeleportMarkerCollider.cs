@@ -4,42 +4,66 @@ using UnityEngine;
 
 public class TeleportMarkerCollider : MonoBehaviour
 {
-    public bool HasCollided { get; private set; }
+    [SerializeField]
+    private float _colliderRadius = 0.5f;
 
-    private SphereCollider _myCollider;
+    [SerializeField]
+    private float _colliderHeight = 1.8f;
 
-    private Collider _other;
+    // Ignore floor, mag. rect and teleport marker
+    private int _layerMask = ~((1 << 12) | (1 << 13) | (1 << 9));
 
-    private void Awake()
+    public bool HasCollided()
     {
-        _myCollider = GetComponentInChildren<SphereCollider>();
+        Vector3 capsuleTop = transform.position + (transform.up * _colliderHeight);
+        return Physics.CheckCapsule(transform.position, capsuleTop, _colliderRadius, _layerMask);
     }
 
     public Vector3 GetAdjustedPosition()
     {
-        if (!HasCollided)
+        //RaycastHit hit;
+        //if (Physics.SphereCast(transform.position, _colliderRadius, Vector3.zero, out hit, 1f, _layerMask))
+        //{
+        //    Debug.Log("detected sphere intersection with " + hit.collider.gameObject);
+        //    Vector3 toIntersection = transform.position - hit.point;
+        //    return transform.position + toIntersection;
+        //}
+        //return transform.position;
+
+
+        Vector3 capsuleTop = transform.position + (transform.up * _colliderHeight);
+        Collider[] touchingColliders = Physics.OverlapCapsule(transform.position, capsuleTop, _colliderRadius, _layerMask);
+        if (touchingColliders.Length <= 0)
         {
             return transform.position;
         }
-        Vector3 closest = _other.ClosestPointOnBounds(transform.position);
-        Vector3 awayFromOther = (transform.position - closest).normalized;
-
-        return transform.position + (awayFromOther * _myCollider.radius);
+        float closestDist = float.MaxValue;
+        GameObject closestObj = null;
+        Vector3 intersection = Vector3.zero;
+        foreach (Collider col in touchingColliders)
+        {
+            Vector3 closestPt = col.ClosestPoint(transform.position);
+            Vector3 toPt = (closestPt - transform.position).normalized;
+            float distance = Vector3.Distance(transform.position + (toPt * _colliderRadius), closestPt);
+            if (distance < closestDist)
+            {
+                closestObj = col.gameObject;
+                closestDist = distance;
+                intersection = closestPt;
+            }
+        }
+        Debug.Log("detected sphere intersection with " + closestObj);
+        Debug.Log("shifted teleport position by " + closestDist);
+        // Move away from collider by same distance
+        Vector3 awayFromCol = (transform.position - intersection).normalized;
+        return transform.position + (awayFromCol * closestDist);
     }
 
-    private void OnTriggerStay(Collider other)
+    private void OnDrawGizmos()
     {
-        Debug.Log("Marker collided");
-        HasCollided = true;
-        _other = other;
+        Gizmos.color = Color.cyan;
+        Vector3 centre = transform.position + (transform.up * _colliderHeight / 2f);
+        Gizmos.DrawWireCube(centre, new Vector3(_colliderRadius * 2f, _colliderHeight, _colliderRadius * 2f));
     }
-
-    private void OnTriggerExit(Collider other)
-    {
-        Debug.Log("Marker stopped colliding");
-        HasCollided = false;
-        _other = null;
-    }
-
 
 }
