@@ -119,7 +119,7 @@ public class GazeTeleport : MonoBehaviour
     private bool IsTeleportTargetValid()
     {
         Vector3 target = _gazeMag.LastGazePos;
-        if (target.y > _player.position.y * 2f || _markerCollider.IsObscured())
+        if (target.y > _player.position.y * 2f && !_markerCollider.IsObscured())
         {
             return false;
         }
