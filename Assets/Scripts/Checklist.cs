@@ -10,14 +10,14 @@ public class Checklist : MonoBehaviour
 
     private Canvas _canvas;
 
-    private Renderer _renderer;
+    private Renderer[] _renderers;
 
     private Text[] _texts;
 
     private void Awake()
     {
-        _renderer = GetComponent<Renderer>();
         _canvas = GetComponentInChildren<Canvas>();
+        _renderers = GetComponentsInChildren<Renderer>();
         _texts = GetComponentsInChildren<Text>();
         SetVisible(false);
     }
@@ -25,8 +25,12 @@ public class Checklist : MonoBehaviour
     private void SetVisible(bool state)
     {
         IsVisible = state;
-        _renderer.enabled = state;
         _canvas.enabled = state;
+
+        foreach (Renderer renderer in _renderers)
+        {
+            renderer.enabled = state;
+        }
 
         if (state)
         {

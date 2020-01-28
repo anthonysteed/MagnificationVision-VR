@@ -10,8 +10,6 @@ public class ListItem : MonoBehaviour
 
     public bool Found { get; private set; }
 
-    private RawImage _icon;
-
     private Image _checkmark;
 
     private Text _itemText;

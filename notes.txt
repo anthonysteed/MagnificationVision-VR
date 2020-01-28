@@ -1,7 +1,6 @@
 # TO-DO:
 
 * bring up menu/checklist of items on left trigger click (trigger release --> menu disappears)
-* implement standard SteamVR teleport
 
 * improve gaze teleport:
 	* set teleportation such that appearing inside objects is impossible (teleport some epsilon away from collider)
