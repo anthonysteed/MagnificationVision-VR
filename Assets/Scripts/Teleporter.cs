@@ -8,6 +8,7 @@ using Valve.VR.InteractionSystem;
 
 public class Teleporter : MonoBehaviour
 {
+    public bool IsArcActive { get; private set; }
 
     [SerializeField]
     private float _fadeTime = 0.5f;
@@ -43,7 +44,7 @@ public class Teleporter : MonoBehaviour
         _arc = GetComponentInChildren<TeleportArc>();
         _teleportMarker = FindObjectOfType<TeleportPoint>();
         _markerCollider = _teleportMarker.GetComponentInChildren<TeleportMarkerCollider>();
-        _arc.traceLayerMask = ~(1 << 13); // ignore teleport marker
+        _arc.traceLayerMask = ~((1 << 13) | (1 << 9)); // ignore teleport marker
         _aimAnchor = _arc.transform;
     }
 
@@ -67,9 +68,11 @@ public class Teleporter : MonoBehaviour
         {
             _arc.Hide();
             _teleportMarker.SetAlpha(0f, 0f);
+            IsArcActive = false;
             return;
         }
 
+        IsArcActive = true;
         Vector3 arcVelocity = _aimAnchor.forward * _maxDistance;
         _arc.SetArcData(_aimAnchor.position, arcVelocity, true, false);
 

@@ -35,6 +35,8 @@ public class MagnificationManager : MonoBehaviour
 
     private Transform _player;
 
+    private Teleporter _teleporter;
+
     private GazeTeleport _gazeTeleport;
 
     private Transform _leftHand;
@@ -59,6 +61,7 @@ public class MagnificationManager : MonoBehaviour
         _standardFov = _magCamera.fieldOfView;
         _rectFadeEffects = _magRect.GetComponentsInChildren<LerpAlpha>();
         _gazeTeleport = GetComponent<GazeTeleport>();
+        _teleporter = FindObjectOfType<Teleporter>();
 
         AssignMagMode();
     }
@@ -158,7 +161,7 @@ public class MagnificationManager : MonoBehaviour
             {
                 ToggleMagnification(true);
             }
-            else if (!_gazeRectIntersection.HasValue && _isActive)
+            else if (_isActive && (!_gazeRectIntersection.HasValue || _teleporter.us)
             {
                 ToggleMagnification(false);
             }
