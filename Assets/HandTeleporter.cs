@@ -53,8 +53,11 @@ public class HandTeleporter : MonoBehaviour
     {
         if (SteamVR_Actions.default_TouchPad[SteamVR_Input_Sources.RightHand].axis == Vector2.zero)
         {
-            _arc.Hide();
-            _teleportMarker.SetAlpha(0f, 0f);
+            if (IsArcActive)
+            {
+                _arc.Hide();
+                _teleportMarker.SetAlpha(0f, 0f);
+            }
             IsArcActive = false;
             return;
         }

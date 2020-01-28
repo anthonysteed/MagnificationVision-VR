@@ -112,7 +112,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         {
             _isMagActive = true;
             _lastDotPos = _magManager.LastWorldGazePos;
-            _oldAverageDist = Vector3.Distance(_player.position, _lastDotPos);
+            _oldAverageDist = Vector3.Distance(_player.position, _lastDotPos) / 2f;
         }
 
         Vector3 gazeSceenPos = gazePoint.textureCoord;

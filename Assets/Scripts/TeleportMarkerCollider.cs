@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class TeleportMarkerCollider : MonoBehaviour
 {
+
+
     [SerializeField]
     private float _colliderRadius = 0.5f;
 
@@ -17,6 +19,22 @@ public class TeleportMarkerCollider : MonoBehaviour
     {
         Vector3 capsuleTop = transform.position + (transform.up * _colliderHeight);
         return Physics.CheckCapsule(transform.position, capsuleTop, _colliderRadius, _layerMask);
+    }
+
+    public bool IsObscured()
+    {
+        Vector3 pos;
+        if (HasCollided())
+        {
+            pos = GetAdjustedPosition();
+        }
+        else
+        {
+            pos = transform.position;
+        }
+        pos.y = 0f;
+
+        return Physics.Raycast(pos, transform.up, 1f, _layerMask) && Physics.Raycast(pos, -transform.up, 1f, _layerMask);
     }
 
     public Vector3 GetAdjustedPosition()

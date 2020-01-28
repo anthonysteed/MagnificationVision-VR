@@ -6,14 +6,14 @@ using Valve.VR;
 
 public class Teleporter : MonoBehaviour
 {
+    public bool IsTeleporting { get; private set; }
+
     [SerializeField]
     private float _fadeTime = 0.5f;
 
     private Transform _player;
 
     private Transform _playSpace;
-
-    private bool _isTeleporting = false;
 
     private void Awake()
     {
@@ -23,7 +23,7 @@ public class Teleporter : MonoBehaviour
 
     public void Teleport(Vector3 target)
     {
-        if (_isTeleporting)
+        if (IsTeleporting)
         {
             return;
         }
@@ -35,7 +35,7 @@ public class Teleporter : MonoBehaviour
 
     private IEnumerator MovePlaySpace(Vector3 translation)
     {
-        _isTeleporting = true;
+        IsTeleporting = true;
         SteamVR_Fade.Start(Color.white, _fadeTime, true);
 
         yield return new WaitForSeconds(_fadeTime);
@@ -43,7 +43,7 @@ public class Teleporter : MonoBehaviour
 
         SteamVR_Fade.Start(Color.clear, _fadeTime, true);
 
-        _isTeleporting = false;
+        IsTeleporting = false;
     }
 
 }

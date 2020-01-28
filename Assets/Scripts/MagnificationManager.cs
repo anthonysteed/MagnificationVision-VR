@@ -53,6 +53,8 @@ public class MagnificationManager : MonoBehaviour
 
     private float _standardFov;
 
+    private float _handDistance;
+
     private Vector3 _planeNormal = Vector3.zero;
 
     private void Awake()
@@ -62,7 +64,7 @@ public class MagnificationManager : MonoBehaviour
         _magCamera = GetComponentInChildren<Camera>();
         _standardFov = _magCamera.fieldOfView;
         _rectFadeEffects = _magRect.GetComponentsInChildren<LerpAlpha>();
-        _gazeTeleport = GetComponent<GazeTeleport>();
+        _gazeTeleport = FindObjectOfType<GazeTeleport>();
         _handTeleporter = FindObjectOfType<HandTeleporter>();
         _checklist = FindObjectOfType<Checklist>();
 
@@ -160,11 +162,11 @@ public class MagnificationManager : MonoBehaviour
         {
             UpdateRectDimensions();
             FindGazeRectIntersection();
-            if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible)
+            if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 1f)
             {
                 ToggleMagnification(true);
             }
-            else if (_isActive && (!_gazeRectIntersection.HasValue || _handTeleporter.IsArcActive || _checklist.IsVisible))
+            else if (_isActive && (!_gazeRectIntersection.HasValue || _handTeleporter.IsArcActive || _checklist.IsVisible || _handDistance > 1f))
             {
                 ToggleMagnification(false);
             }
@@ -179,16 +181,15 @@ public class MagnificationManager : MonoBehaviour
 
     private void UpdateRectDimensions()
     {
-        Transform leftHand = _leftHand.transform;
-        Transform rightHand = _rightHand.transform;
-        float width = Vector3.Distance(leftHand.position, rightHand.position) - _offsetFromHands;
+        _handDistance = Vector3.Distance(_leftHand.position, _rightHand.position);
+        float width = _handDistance - _offsetFromHands;
 
         _magRect.localScale = new Vector3(width, _rectHeight, 1f);
         _magCamera.aspect = width / _rectHeight;
-        _magRect.position = (leftHand.position + rightHand.position) / 2f;
+        _magRect.position = (_leftHand.position + _rightHand.position) / 2f;
 
-        Vector3 upDir = leftHand.forward + rightHand.forward;
-        Vector3 rightDir = rightHand.position - leftHand.position;
+        Vector3 upDir = _leftHand.forward + _rightHand.forward;
+        Vector3 rightDir = _rightHand.position - _leftHand.position;
 
         _planeNormal = Vector3.Cross(rightDir, upDir);
         _magRect.rotation = Quaternion.LookRotation(_planeNormal, upDir);
