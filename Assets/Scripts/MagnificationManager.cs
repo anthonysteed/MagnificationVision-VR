@@ -12,8 +12,6 @@ public class MagnificationManager : MonoBehaviour
 {
     public bool IsMagnifying { get { return _isActive; } }
 
-    public Collider LastGazeTarget { get; private set; }
-
     public Vector3 LastWorldGazePos { get; private set; }
 
     public enum MagnificationMode { NATURAL, GAZE, COMBINED }
@@ -26,6 +24,9 @@ public class MagnificationManager : MonoBehaviour
 
     [SerializeField]
     private float _offsetFromHands = 0.1f;
+
+    [SerializeField]
+    private int _numFramesToBuffer = 30;
 
     private Transform _magRect;
 
@@ -57,6 +58,10 @@ public class MagnificationManager : MonoBehaviour
 
     private Vector3 _planeNormal = Vector3.zero;
 
+    private int _gazeBufferIndex = 0;
+
+    private Vector3[] _bufferedGazePositions;
+
     private void Awake()
     {
         _magRect = GameObject.FindGameObjectWithTag("MagRect").transform;
@@ -68,6 +73,7 @@ public class MagnificationManager : MonoBehaviour
         _handTeleporter = FindObjectOfType<HandTeleporter>();
         _checklist = FindObjectOfType<Checklist>();
 
+        _bufferedGazePositions = new Vector3[_numFramesToBuffer];
         AssignMagMode();
     }
 
@@ -97,7 +103,7 @@ public class MagnificationManager : MonoBehaviour
         return _leftHand && _rightHand;
     }
 
-    private void FindGazeRectIntersection()
+    private void FindGazeIntersections()
     {
         TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
         if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out RaycastHit hit, 10f))
@@ -108,8 +114,18 @@ public class MagnificationManager : MonoBehaviour
             }
             else
             {
-                LastGazeTarget = hit.collider;
-                LastWorldGazePos = hit.point;
+                _bufferedGazePositions[_gazeBufferIndex] = hit.point;
+                int i = _gazeBufferIndex;
+                Vector3 averageGazePos = Vector3.zero;
+                for (int s = 0; s < _numFramesToBuffer; s++)
+                {
+                    averageGazePos += _bufferedGazePositions[i];
+                    i = (i + 1) % _numFramesToBuffer;
+                }
+                averageGazePos /= _numFramesToBuffer;
+
+                _gazeBufferIndex = (_gazeBufferIndex + 1) % _numFramesToBuffer;
+                LastWorldGazePos = averageGazePos;
             }
         }
         else
@@ -161,7 +177,7 @@ public class MagnificationManager : MonoBehaviour
         if (AreHandsAlive())
         {
             UpdateRectDimensions();
-            FindGazeRectIntersection();
+            FindGazeIntersections();
             if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 1f)
             {
                 ToggleMagnification(true);

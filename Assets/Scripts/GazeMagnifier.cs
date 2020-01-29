@@ -12,8 +12,6 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
     public float LastGazeDistance { get; private set; }
 
-    public Collider LastGazeTarget { get; private set; }
-
     // How much to weigh the most recently sampled gaze distance
     [SerializeField]
     private float _sampleAlpha = 0.05f;
@@ -170,7 +168,6 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange, _layerMask))
         {
             hitPos = hit.point;
-            LastGazeTarget = hit.collider;
         }
         else
         {

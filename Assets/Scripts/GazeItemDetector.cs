@@ -28,24 +28,28 @@ public class GazeItemDetector : MonoBehaviour
     // Or null
     private HiddenItem GetCurrentGazedAtItem()
     {
+        Vector3 gazePos;
         if (_magManager.IsMagnifying)
         {
-            // Check gaze ray going through MagRect
-            Collider col = _gazeMagnifier.LastGazeTarget;
-            if (col != null)
-            {
-                return col.GetComponent<HiddenItem>();
-            }
+            // Check gaze ray through MagRect
+            gazePos = _gazeMagnifier.LastGazePos;
         }
         else
         {
             // Check normal gaze ray
-            Collider col = _magManager.LastGazeTarget;
-            if (col != null)
+            gazePos = _magManager.LastWorldGazePos;
+        }
+        
+        Collider[] collidersSeen = Physics.OverlapSphere(gazePos, 0.2f);
+        foreach (Collider col in collidersSeen)
+        {
+            HiddenItem item = col.GetComponent<HiddenItem>();
+            if (item != null)
             {
-                return col.GetComponent<HiddenItem>();
+                return item;
             }
         }
+
         return null;
     }
 
@@ -59,7 +63,7 @@ public class GazeItemDetector : MonoBehaviour
         if (_isDiscoveryPending)
         {
             // Player looked away -- cancel discovery
-            if (item == null || item != _gazedAtItem)
+            if (item == null)
             {
                 _isDiscoveryPending = false;
             }
