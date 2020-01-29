@@ -1,7 +1,5 @@
 # TO-DO:
 
-* lower gaze dot alpha when very close
-* remove mag.rect ghosting
 * adjust "seen" algorithm + surrounding colliders for hidden items
 	
 	
