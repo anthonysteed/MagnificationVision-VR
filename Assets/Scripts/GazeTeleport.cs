@@ -16,6 +16,8 @@ public class GazeTeleport : MonoBehaviour
     [SerializeField]
     private float _activationTime = 1f;
 
+    private GazeDotIndicator _dotImage;
+
     private MagnificationManager _magManager;
 
     private GazeMagnifier _gazeMag;
@@ -32,10 +34,6 @@ public class GazeTeleport : MonoBehaviour
 
     private Transform _playspace;
 
-    private Image _gazeDotImage;
-
-    private float _imageAlpha;
-
     private float _holdDownTime = 0f;
 
     private void Awake()
@@ -45,8 +43,7 @@ public class GazeTeleport : MonoBehaviour
         _magManager = FindObjectOfType<MagnificationManager>();
         _teleportMarker = FindObjectOfType<TeleportPoint>();
         _markerCollider = FindObjectOfType<TeleportMarkerCollider>();
-        _gazeDotImage = GetComponentInChildren<Image>();
-        _imageAlpha = _gazeDotImage.color.a;
+        _dotImage = GetComponent<GazeDotIndicator>();
 
         _player = Camera.main.transform;
         _playspace = _player.parent;
@@ -63,7 +60,7 @@ public class GazeTeleport : MonoBehaviour
         SetMarkerPosition();
         // If marker still collides after adjustment, target cannot be teleported to
         bool isTargetValid = IsTeleportTargetValid();
-        SetDotColour(isTargetValid);
+        _dotImage.SetValid(isTargetValid);
 
         SteamVR_Action_Boolean_Source triggerDown = SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand];
         if (triggerDown.state && !_teleporter.IsTeleporting)
@@ -82,7 +79,7 @@ public class GazeTeleport : MonoBehaviour
                 }
             }
             _holdDownTime += Time.deltaTime;
-            _gazeDotImage.fillAmount = _holdDownTime / _activationTime;
+            _dotImage.SetProgress(_holdDownTime / _activationTime);
             if (_holdDownTime >= _activationTime)
             {
                 // Start teleport
@@ -100,15 +97,8 @@ public class GazeTeleport : MonoBehaviour
         else
         {
             _teleportMarker.SetAlpha(0f, 0f);
-            _gazeDotImage.fillAmount = 1f;
+            _dotImage.SetProgress(1f);
         }
-    }
-
-    private void SetDotColour(bool isValid)
-    {
-        Color color = isValid ? Color.green : Color.red;
-        color.a = _imageAlpha;
-        _gazeDotImage.color = color;
     }
 
     private void SetMarkerPosition()

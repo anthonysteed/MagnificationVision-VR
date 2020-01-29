@@ -10,6 +10,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     // World space pos. of gaze dot last frame
     public Vector3 LastGazePos { get; private set; }
 
+    public float LastGazeDistance { get; private set; }
+
     public Collider LastGazeTarget { get; private set; }
 
     // How much to weigh the most recently sampled gaze distance
@@ -66,7 +68,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     // Avg. gaze distance calculated last frame
     private float _oldAverageDist;
 
-    private bool _isTeleportPending = false;
+    private bool _isTeleporting = false;
 
     private float _lastMagnification = 1f;
 
@@ -131,7 +133,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
     private void OnGazeTeleport(Vector3 destination)
     {
-        _isTeleportPending = true;
+        _isTeleporting = true;
         // Extra zoom effect
         //float dist = Vector3.Distance(_player.position, destination) * 6f;
         //for (int j = 0; j < _numInertialFramesToSample; j++)
@@ -143,7 +145,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
     private void OnTeleportComplete()
     {
-        _isTeleportPending = false;
+        _isTeleporting = false;
         ResetZoom(false);
     }
 
@@ -156,7 +158,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
             _isMagActive = true;
             ResetZoom(true);
         }
-        if (_isTeleportPending)
+        if (_isTeleporting)
         {
             return _lastMagnification;
         }
@@ -195,9 +197,9 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         LastGazePos = dotPos;
 
         Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
-        float distToDot = Vector3.Distance(eyeBallPos, _gazeDot.position);
+        LastGazeDistance = Vector3.Distance(eyeBallPos, _gazeDot.position);
 
-        float magnification = 1f + (GetWeightedAverageDist(distToDot) * _distMultiplier);
+        float magnification = 1f + (GetWeightedAverageDist(LastGazeDistance) * _distMultiplier);
 
         _timeAtLastSample = Time.time;
         _lastMagnification = magnification;
