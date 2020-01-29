@@ -90,6 +90,11 @@ public class HandTeleporter : MonoBehaviour
             _arc.SetColor(Color.red);
             _teleportMarker.SetAlpha(0f, 0f);
             _isArcTargetValid = false;
+            if (didHit)
+            {
+                Debug.Log("Arc hit " + hit.collider.gameObject);
+
+            }
         }
         _arc.Show();
     }
