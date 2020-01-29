@@ -68,6 +68,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
     private bool _isTeleportPending = false;
 
+    private float _lastMagnification = 1f;
+
     private void OnEnable()
     {
         GazeTeleport.OnGazeTeleport += OnGazeTeleport;
@@ -127,16 +129,16 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         _oldAverageDist = toWorldGaze ? gazeDistEstimate : 0f;
     }
 
-    // Extra zoom effect
     private void OnGazeTeleport(Vector3 destination)
     {
         _isTeleportPending = true;
-        float dist = Vector3.Distance(_player.position, destination) * 6f;
-        for (int j = 0; j < _numInertialFramesToSample; j++)
-        {
-            _sampledDistances[_inertialFrameIndex] = dist;
-            _inertialFrameIndex = (_inertialFrameIndex + 1) % _numInertialFramesToSample;
-        }
+        // Extra zoom effect
+        //float dist = Vector3.Distance(_player.position, destination) * 6f;
+        //for (int j = 0; j < _numInertialFramesToSample; j++)
+        //{
+        //    _sampledDistances[_inertialFrameIndex] = dist;
+        //    _inertialFrameIndex = (_inertialFrameIndex + 1) % _numInertialFramesToSample;
+        //}
     }
 
     private void OnTeleportComplete()
@@ -153,6 +155,10 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         {
             _isMagActive = true;
             ResetZoom(true);
+        }
+        if (_isTeleportPending)
+        {
+            return _lastMagnification;
         }
 
         Vector3 gazeSceenPos = gazePoint.textureCoord;
@@ -182,16 +188,11 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         }
 
         dotPos /= _numFramesToSample;
-        dotPos -= (0.1f * magRay.direction);
 
-        // Don't move gaze dot during teleport
-        if (!_isTeleportPending)
-        {
-            _gazeDot.position = dotPos - (0.1f * magRay.direction);
-            _gazeDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
-        }
+        _gazeDot.position = dotPos - (0.1f * magRay.direction);
+        _gazeDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
 
-        LastGazePos = _gazeDot.position;
+        LastGazePos = dotPos;
 
         Vector3 eyeBallPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
         float distToDot = Vector3.Distance(eyeBallPos, _gazeDot.position);
@@ -199,6 +200,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         float magnification = 1f + (GetWeightedAverageDist(distToDot) * _distMultiplier);
 
         _timeAtLastSample = Time.time;
+        _lastMagnification = magnification;
         return magnification;
     }
 
