@@ -8,6 +8,9 @@ using Valve.VR.InteractionSystem;
 
 public class GazeTeleport : MonoBehaviour
 {
+    public delegate void GazeTeleportEvent(Vector3 destination);
+    public static event GazeTeleportEvent OnGazeTeleport;
+
     public bool IsTeleportPending { get { return _teleportCandidate.HasValue; } }
 
     [SerializeField]
@@ -74,7 +77,7 @@ public class GazeTeleport : MonoBehaviour
                 }
                 else
                 {
-                    //_teleportMarker.SetAlpha(0f, 0f);
+                    _teleportMarker.SetAlpha(0f, 0f);
                     return;
                 }
             }
@@ -84,6 +87,7 @@ public class GazeTeleport : MonoBehaviour
             {
                 // Start teleport
                 _teleporter.Teleport(_teleportCandidate.Value);
+                OnGazeTeleport(_teleportCandidate.Value);
                 _teleportCandidate = null;
                 _holdDownTime = 0f;
             }
@@ -95,7 +99,7 @@ public class GazeTeleport : MonoBehaviour
         }
         else
         {
-            //_teleportMarker.SetAlpha(0f, 0f);
+            _teleportMarker.SetAlpha(0f, 0f);
             _gazeDotImage.fillAmount = 1f;
         }
     }

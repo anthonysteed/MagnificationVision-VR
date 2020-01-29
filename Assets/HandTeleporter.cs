@@ -31,7 +31,7 @@ public class HandTeleporter : MonoBehaviour
         _arc = GetComponentInChildren<TeleportArc>();
         _teleportMarker = FindObjectOfType<TeleportPoint>();
         _markerCollider = _teleportMarker.GetComponentInChildren<TeleportMarkerCollider>();
-        _arc.traceLayerMask = ~((1 << 13) | (1 << 9)); // ignore teleport marker mag. rect
+        _arc.traceLayerMask = ~((1 << 13) | (1 << 9)); // ignore teleport marker and mag. rect
         _aimAnchor = _arc.transform;
     }
 

@@ -1,12 +1,8 @@
 # TO-DO:
 
-* bring up menu/checklist of items on left trigger click (trigger release --> menu disappears)
-
-* improve gaze teleport:
-	* set teleportation such that appearing inside objects is impossible (teleport some epsilon away from collider)
-	* do not allow teleporting to above-eye heights
-	* add visual indication to dot of valid/invalid teleportation spots
-	* add progress bar to dot to indicate pending teleport
+* extra zoom effect on gaze teleport?
+* lower gaze dot alpha when very close
+* adjust "seen" algorithm + surrounding colliders for hidden items
 	
 	
 * prepare scene:

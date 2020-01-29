@@ -6,6 +6,9 @@ using Valve.VR;
 
 public class Teleporter : MonoBehaviour
 {
+    public delegate void TeleportEvent();
+    public static event TeleportEvent OnTeleportComplete;
+
     public bool IsTeleporting { get; private set; }
 
     [SerializeField]
@@ -43,6 +46,7 @@ public class Teleporter : MonoBehaviour
 
         SteamVR_Fade.Start(Color.clear, _fadeTime, true);
 
+        OnTeleportComplete();
         IsTeleporting = false;
     }
 
