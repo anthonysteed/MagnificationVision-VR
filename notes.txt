@@ -1,11 +1,12 @@
 # TO-DO:
+	
 
-* adjust "seen" algorithm + surrounding colliders for hidden items
-	
-	
+* item images for checklist
+* 
 * prepare scene:
-	* ensure all objects have colliders
-	* 
+	* ensure all objects have reasonably sized colliders
+	* victory screen?
+	* lock off tutorial area until trigger
 	
 	
 	

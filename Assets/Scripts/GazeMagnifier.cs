@@ -120,7 +120,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
             _sampledPoints[i] = toWorldGaze ? _magManager.LastWorldGazePos : _gazeDot.position;
         }
 
-        float gazeDistEstimate = Vector3.Distance(_player.position, _magManager.LastWorldGazePos) / 2f;
+        Vector3 eyeBallsPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
+        float gazeDistEstimate = Vector3.Distance(eyeBallsPos, _magManager.LastWorldGazePos) / 2f;
         for (int i = 0; i < _numInertialFramesToSample; i++)
         {
             _sampledDistances[i] = toWorldGaze ? gazeDistEstimate : 0f;

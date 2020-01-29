@@ -178,11 +178,11 @@ public class MagnificationManager : MonoBehaviour
         {
             UpdateRectDimensions();
             FindGazeIntersections();
-            if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 1f)
+            if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 0.7f)
             {
                 ToggleMagnification(true);
             }
-            else if (_isActive && (!_gazeRectIntersection.HasValue || _handTeleporter.IsArcActive || _checklist.IsVisible || _handDistance > 1f))
+            else if (_isActive && (!_gazeRectIntersection.HasValue || _handTeleporter.IsArcActive || _checklist.IsVisible || _handDistance > 0.7f))
             {
                 ToggleMagnification(false);
             }
