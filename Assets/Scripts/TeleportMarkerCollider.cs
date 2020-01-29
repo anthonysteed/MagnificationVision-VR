@@ -4,61 +4,48 @@ using UnityEngine;
 
 public class TeleportMarkerCollider : MonoBehaviour
 {
-
-
-    [SerializeField]
-    private float _colliderRadius = 0.5f;
-
-    [SerializeField]
-    private float _colliderHeight = 1.8f;
-
     // Ignore floor, teleport marker and mag. rect
     private int _layerMask = ~((1 << 12) | (1 << 13) | (1 << 9));
 
-    public bool IsObscured()
+    private CapsuleCollider _myCollider;
+
+    private void Awake()
     {
-        return Physics.Raycast(transform.position, transform.up, 1f, _layerMask);
+        _myCollider = GetComponent<CapsuleCollider>();
     }
 
     public bool HasCollided()
     {
-        Vector3 capsuleTop = transform.position + (transform.up * _colliderHeight);
-        return Physics.CheckCapsule(transform.position, capsuleTop, _colliderRadius, _layerMask);
+        Vector3 capsuleTop = transform.position + (transform.up * _myCollider.height);
+        return Physics.CheckCapsule(transform.position, capsuleTop, _myCollider.radius, _layerMask);
     }
 
     public Vector3 GetAdjustedPosition()
     {
-        Vector3 capsuleTop = transform.position + (transform.up * _colliderHeight);
-        Collider[] touchingColliders = Physics.OverlapCapsule(transform.position, capsuleTop, _colliderRadius, _layerMask);
+        Vector3 capsuleTop = transform.position + (transform.up * _myCollider.height);
 
-        float closestDist = float.MaxValue;
-        GameObject closestObj = null;
-        Vector3 intersection = Vector3.zero;
+        Collider[] touchingColliders = Physics.OverlapCapsule(transform.position, capsuleTop, _myCollider.radius, _layerMask);
+
+        float largestDist = 0f;
+        Vector3 shiftDir = Vector3.zero;
         foreach (Collider col in touchingColliders)
         {
-            Vector3 closestPt = col.ClosestPoint(transform.position);
-            Vector3 toPt = (closestPt - transform.position).normalized;
-            float distance = Vector3.Distance(transform.position + (toPt * _colliderRadius), closestPt);
-
-            // Ensure closest collider is not above us
-            if (distance < closestDist)
+            if (!Physics.ComputePenetration(_myCollider, transform.position, transform.rotation,
+                col, col.transform.position, col.transform.rotation, out Vector3 awayDir, out float distance))
             {
-                closestObj = col.gameObject;
-                closestDist = distance;
-                intersection = closestPt;
+                continue;
             }
-        }
-        
-        // Move away from collider by same distance
-        Vector3 awayFromCol = (transform.position - intersection).normalized;
-        return transform.position + (awayFromCol * closestDist);
-    }
+            // Don't want to shift downwards
+            if (distance > largestDist && Vector3.Angle(-transform.up, awayDir) > 45f)
+            {
+                largestDist = distance;
+                shiftDir = awayDir;
+            }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.cyan;
-        Vector3 centre = transform.position + (transform.up * _colliderHeight / 2f);
-        Gizmos.DrawWireCube(centre, new Vector3(_colliderRadius * 2f, _colliderHeight, _colliderRadius * 2f));
+        }
+
+        largestDist += _myCollider.radius;
+        return transform.position + (largestDist * shiftDir);
     }
 
 }

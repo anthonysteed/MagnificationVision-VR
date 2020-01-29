@@ -45,7 +45,7 @@ public class HandTeleporter : MonoBehaviour
         UpdateArc();
         if (SteamVR_Actions.default_Teleport[SteamVR_Input_Sources.RightHand].stateDown && _isArcTargetValid)
         {
-            _teleporter.Teleport(_arcTarget);
+            _teleporter.Teleport(_teleportMarker.transform.position);
         }
     }
 

@@ -83944,7 +83944,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 265446595482805788}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: teleport_marker_lookat_joint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -83962,7 +83962,7 @@ GameObject:
   - component: {fileID: 265446595482822534}
   - component: {fileID: 265446595483603758}
   - component: {fileID: 265446595484640498}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: move_location_icon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -83981,7 +83981,8 @@ GameObject:
   - component: {fileID: 265446595476596798}
   - component: {fileID: 265446595477025282}
   - component: {fileID: 265446595482383717}
-  m_Layer: 0
+  - component: {fileID: 265446595482383718}
+  m_Layer: 13
   m_Name: TeleportPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -84000,8 +84001,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae2faa2074900d349ad6d8bf57a6c3a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _colliderRadius: 0.6
-  _colliderHeight: 0.23
+--- !u!136 &265446595482383718
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265446595482383716}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.3
+  m_Height: 1.8
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.85, z: 0}
 --- !u!1 &265446595482524692
 GameObject:
   m_ObjectHideFlags: 0
@@ -84013,7 +84026,7 @@ GameObject:
   - component: {fileID: 265446595482793504}
   - component: {fileID: 265446595483626262}
   - component: {fileID: 265446595484820700}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: locked_icon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -84031,7 +84044,7 @@ GameObject:
   - component: {fileID: 265446595482789430}
   - component: {fileID: 265446595483557366}
   - component: {fileID: 265446595484612676}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: switch_scenes_icon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -84047,7 +84060,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 265446595482827928}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: teleport_marker_icons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -84066,7 +84079,6 @@ GameObject:
   - component: {fileID: 265446595483582760}
   - component: {fileID: 265446595484609552}
   - component: {fileID: 265446595482607762}
-  - component: {fileID: 265446595482607761}
   m_Layer: 13
   m_Name: teleport_marker_mesh
   m_TagString: Untagged
@@ -84074,20 +84086,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!136 &265446595482607761
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 265446595482607760}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 0
-  m_Radius: 0.3
-  m_Height: 1.8
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!54 &265446595482607762
 Rigidbody:
   m_ObjectHideFlags: 0
