@@ -84000,7 +84000,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae2faa2074900d349ad6d8bf57a6c3a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _colliderRadius: 0.5
+  _colliderRadius: 0.6
   _colliderHeight: 0.23
 --- !u!1 &265446595482524692
 GameObject:

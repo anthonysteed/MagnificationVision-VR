@@ -56,24 +56,25 @@ public class GazeTeleport : MonoBehaviour
             return;
         }
 
-        Vector3 target = _gazeMag.LastGazePos;
-        target.y = 0f;
-        _teleportMarker.transform.position = target;
-        SetDotColour();
+        // Set + adjust position once per frame
+        SetMarkerPosition();
+        // If marker still collides after adjustment, target cannot be teleported to
+        bool isTargetValid = IsTeleportTargetValid();
+        SetDotColour(isTargetValid);
 
         SteamVR_Action_Boolean_Source triggerDown = SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand];
         if (triggerDown.state && !_teleporter.IsTeleporting)
         {
             if (!_teleportCandidate.HasValue)
             {
-                if (IsTeleportTargetValid())
+                if (isTargetValid)
                 {
                     SetTeleportTarget();
                     _teleportMarker.SetAlpha(1f, 1f);
                 }
                 else
                 {
-                    _teleportMarker.SetAlpha(0f, 0f);
+                    //_teleportMarker.SetAlpha(0f, 0f);
                     return;
                 }
             }
@@ -94,24 +95,27 @@ public class GazeTeleport : MonoBehaviour
         }
         else
         {
-            _teleportMarker.SetAlpha(0f, 0f);
+            //_teleportMarker.SetAlpha(0f, 0f);
             _gazeDotImage.fillAmount = 1f;
         }
     }
 
-    private void SetDotColour()
+    private void SetDotColour(bool isValid)
     {
-        if (IsTeleportTargetValid())
+        Color color = isValid ? Color.green : Color.red;
+        color.a = _imageAlpha;
+        _gazeDotImage.color = color;
+    }
+
+    private void SetMarkerPosition()
+    {
+        Vector3 target = _gazeMag.LastGazePos;
+        target.y = 0f;
+        _teleportMarker.transform.position = target;
+
+        if (_markerCollider.HasCollided())
         {
-            Color activeColour = Color.green;
-            activeColour.a = _imageAlpha;
-            _gazeDotImage.color = activeColour;
-        }
-        else
-        {
-            Color invalidColour = Color.red;
-            invalidColour.a = _imageAlpha;
-            _gazeDotImage.color = invalidColour;
+            _teleportMarker.transform.position = _markerCollider.GetAdjustedPosition();
         }
     }
 
@@ -119,7 +123,7 @@ public class GazeTeleport : MonoBehaviour
     private bool IsTeleportTargetValid()
     {
         Vector3 target = _gazeMag.LastGazePos;
-        if (target.y > _player.position.y * 2f && !_markerCollider.IsObscured())
+        if (target.y > _player.position.y * 2f || _markerCollider.IsObscured())
         {
             return false;
         }
@@ -136,7 +140,7 @@ public class GazeTeleport : MonoBehaviour
         {
             target = _markerCollider.GetAdjustedPosition();
         }
-        _markerCollider.transform.position = target;
+        _teleportMarker.transform.position = target;
 
         _teleportCandidate = target;
     }

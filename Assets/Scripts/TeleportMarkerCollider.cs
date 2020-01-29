@@ -15,26 +15,15 @@ public class TeleportMarkerCollider : MonoBehaviour
     // Ignore floor, teleport marker and mag. rect
     private int _layerMask = ~((1 << 12) | (1 << 13) | (1 << 9));
 
+    public bool IsObscured()
+    {
+        return Physics.Raycast(transform.position, transform.up, 1f, _layerMask);
+    }
+
     public bool HasCollided()
     {
         Vector3 capsuleTop = transform.position + (transform.up * _colliderHeight);
         return Physics.CheckCapsule(transform.position, capsuleTop, _colliderRadius, _layerMask);
-    }
-
-    public bool IsObscured()
-    {
-        Vector3 pos;
-        if (HasCollided())
-        {
-            pos = GetAdjustedPosition();
-        }
-        else
-        {
-            pos = transform.position;
-        }
-        pos.y = 0f;
-
-        return Physics.Raycast(pos, transform.up, 1f, _layerMask) && Physics.Raycast(pos, -transform.up, 1f, _layerMask);
     }
 
     public Vector3 GetAdjustedPosition()
@@ -50,6 +39,8 @@ public class TeleportMarkerCollider : MonoBehaviour
             Vector3 closestPt = col.ClosestPoint(transform.position);
             Vector3 toPt = (closestPt - transform.position).normalized;
             float distance = Vector3.Distance(transform.position + (toPt * _colliderRadius), closestPt);
+
+            // Ensure closest collider is not above us
             if (distance < closestDist)
             {
                 closestObj = col.gameObject;
