@@ -32,6 +32,7 @@ public class ListItem : MonoBehaviour
             // TODO
             Found = true;
             _itemText.color = Color.green;
+            _itemText.FontTextureChanged();
             Debug.Log(type + " was found");
             _checkmark.enabled = true;
         }

@@ -37,6 +37,7 @@ public class Checklist : MonoBehaviour
             foreach (Text text in _texts)
             {
                 text.fontSize = 20;
+                text.FontTextureChanged();
             }
         }
 
