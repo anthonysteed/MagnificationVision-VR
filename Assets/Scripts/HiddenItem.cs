@@ -8,6 +8,10 @@ public class HiddenItem : MonoBehaviour
     public static event ItemEvent OnItemFound;
 
     public enum Type { BROWN_CHEESE, HEADLESS_FISH, BROKEN_BOTTLE, PINEAPPLE_PIZZA, MARGARINE }
+    
+    public bool Found { get { return _hasBeenDiscovered; } }
+
+    public Type ItemType { get { return _type; } }
 
     [SerializeField]
     private Type _type;

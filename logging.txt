@@ -1,0 +1,22 @@
+#frame1
+class1: data1,data2,...
+class2: data1,...
+
+#frame2
+...
+...
+
+* total time played
+* button presses for each button
+* head position/rotation (local & global), hand positions/rotation (local & global), playspace position
+
+* is hand-teleporting?, teleport target, arc visible?, teleport target valid?, teleport target adjustment amount
+* is gaze-teleporting?, teleport target, teleport target valid?, teleport target adjustment amount, 
+
+* MagRect: is magRect active?, magnification factor, current frame gaze position, gaze dot position, current frame gaze distance, average gaze distance, current time magRect active, total time magRect active, position, rotation, distance from face
+* GazeDot: is teleport target valid?, how much was teleport target adjusted, image alpha, 
+
+* HiddenItem{type}: found?, in regular view?, in magRect view?, found with normal gaze?, found through magRect?, time taken to find
+
+
+

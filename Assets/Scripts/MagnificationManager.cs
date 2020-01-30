@@ -12,8 +12,6 @@ public class MagnificationManager : MonoBehaviour
 {
     public bool IsMagnifying { get { return _isActive; } }
 
-    public Vector3 LastWorldGazePos { get; private set; }
-
     public enum MagnificationMode { NATURAL, GAZE, COMBINED }
 
     [SerializeField]
@@ -25,9 +23,6 @@ public class MagnificationManager : MonoBehaviour
     [SerializeField]
     private float _offsetFromHands = 0.1f;
 
-    [SerializeField]
-    private int _numFramesToBuffer = 30;
-
     private Transform _magRect;
 
     private Camera _magCamera;
@@ -35,6 +30,8 @@ public class MagnificationManager : MonoBehaviour
     private IMagnifier _magnifier;
 
     private Transform _player;
+
+    private WorldGazeTracker _gazeTracker;
 
     private HandTeleporter _handTeleporter;
 
@@ -48,8 +45,6 @@ public class MagnificationManager : MonoBehaviour
 
     private LerpAlpha[] _rectFadeEffects;
 
-    private RaycastHit? _gazeRectIntersection;
-
     private bool _isActive = false;
 
     private float _standardFov;
@@ -58,9 +53,13 @@ public class MagnificationManager : MonoBehaviour
 
     private Vector3 _planeNormal = Vector3.zero;
 
-    private int _gazeBufferIndex = 0;
+    private RaycastHit? _gazeRectIntersection;
 
-    private Vector3[] _bufferedGazePositions;
+    private float _totalTimeActive = 0f;
+
+    private float _curTimeActive = 0f;
+
+    private BufferedLogger _log = new BufferedLogger("MagRect");
 
     private void Awake()
     {
@@ -72,8 +71,8 @@ public class MagnificationManager : MonoBehaviour
         _gazeTeleport = FindObjectOfType<GazeTeleport>();
         _handTeleporter = FindObjectOfType<HandTeleporter>();
         _checklist = FindObjectOfType<Checklist>();
+        _gazeTracker = FindObjectOfType<WorldGazeTracker>();
 
-        _bufferedGazePositions = new Vector3[_numFramesToBuffer];
         AssignMagMode();
     }
 
@@ -103,29 +102,13 @@ public class MagnificationManager : MonoBehaviour
         return _leftHand && _rightHand;
     }
 
-    private void FindGazeIntersections()
+    private void FindGazeRectIntersection()
     {
-        TobiiXR_GazeRay gazeRay = TobiiXR.EyeTrackingData.GazeRay;
-        if (gazeRay.IsValid && Physics.Raycast(gazeRay.Origin, gazeRay.Direction, out RaycastHit hit, 10f))
+        if (Physics.Raycast(_gazeTracker.LastGazeRay, out RaycastHit hit, 10f))
         {
             if (hit.collider.transform == _magRect)
             {
                 _gazeRectIntersection = hit;
-            }
-            else
-            {
-                _bufferedGazePositions[_gazeBufferIndex] = hit.point;
-                int i = _gazeBufferIndex;
-                Vector3 averageGazePos = Vector3.zero;
-                for (int s = 0; s < _numFramesToBuffer; s++)
-                {
-                    averageGazePos += _bufferedGazePositions[i];
-                    i = (i + 1) % _numFramesToBuffer;
-                }
-                averageGazePos /= _numFramesToBuffer;
-
-                _gazeBufferIndex = (_gazeBufferIndex + 1) % _numFramesToBuffer;
-                LastWorldGazePos = averageGazePos;
             }
         }
         else
@@ -141,33 +124,31 @@ public class MagnificationManager : MonoBehaviour
             la.Fade(isEnabled);
         }
         _isActive = isEnabled;
+        if (isEnabled)
+        {
+            _curTimeActive += Time.deltaTime;
+            _totalTimeActive += Time.deltaTime;
+        }
+        else
+        {
+            _curTimeActive = 0f;
+        }
     }
 
     public void OnHandConnectionChange(SteamVR_Behaviour_Pose pose, SteamVR_Input_Sources changedSource, bool isConnected)
     {
-        if (isConnected)
+        if (changedSource == SteamVR_Input_Sources.LeftHand)
         {
-            pose.GetComponentInChildren<Renderer>().enabled = true;
-            if (changedSource == SteamVR_Input_Sources.LeftHand)
-            {
-                _leftHand = pose.transform;
-            }
-            else if (changedSource == SteamVR_Input_Sources.RightHand)
-            {
-                _rightHand = pose.transform;
-            }
+            _leftHand = isConnected ? pose.transform : null;
         }
-        else
+        else if (changedSource == SteamVR_Input_Sources.RightHand)
         {
-            if (changedSource == SteamVR_Input_Sources.LeftHand)
-            {
-                _leftHand = null;
-            }
-            else if (changedSource == SteamVR_Input_Sources.RightHand)
-            {
-                _rightHand = null;
-            }
-            pose.GetComponentInChildren<Renderer>().enabled = false;
+            _rightHand = isConnected ? pose.transform : null;
+        }
+
+        pose.GetComponentInChildren<Renderer>().enabled = isConnected;
+        if (!isConnected)
+        {
             ToggleMagnification(false);
         }
     } 
@@ -177,7 +158,7 @@ public class MagnificationManager : MonoBehaviour
         if (AreHandsAlive())
         {
             UpdateRectDimensions();
-            FindGazeIntersections();
+            FindGazeRectIntersection();
             if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 0.7f)
             {
                 ToggleMagnification(true);
@@ -191,8 +172,19 @@ public class MagnificationManager : MonoBehaviour
         UpdateCameraTransform();
         if (_isActive && !_gazeTeleport.IsTeleportPending)
         {
-            _magCamera.fieldOfView = _standardFov / _magnifier.GetMagnification(_gazeRectIntersection.Value, _planeNormal);
+            float magnification = _magnifier.GetMagnification(_gazeRectIntersection.Value, _planeNormal);
+            _log.Append("magFactor", magnification);
+            _magCamera.fieldOfView = _standardFov / magnification;
         }
+
+        if (_isActive)
+        {
+            _log.Append("curActiveTime", _curTimeActive);
+            _log.Append("activeTimeTotal", _totalTimeActive);
+        }
+
+        _log.Append("active", _isActive);
+        _log.CommitLine();
     }
 
     private void UpdateRectDimensions()
@@ -209,6 +201,11 @@ public class MagnificationManager : MonoBehaviour
 
         _planeNormal = Vector3.Cross(rightDir, upDir);
         _magRect.rotation = Quaternion.LookRotation(_planeNormal, upDir);
+
+        _log.Append("width", width);
+        _log.Append("pos", _magRect.position);
+        _log.Append("rot", _magRect.rotation.eulerAngles);
+        _log.Append("headDist", Vector3.Distance(_player.position, _magRect.position));
     }
 
     private void UpdateCameraTransform()

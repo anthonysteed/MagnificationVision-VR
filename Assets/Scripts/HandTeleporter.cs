@@ -25,6 +25,8 @@ public class HandTeleporter : MonoBehaviour
 
     private Vector3 _arcTarget;
 
+    private BufferedLogger _log = new BufferedLogger("handTeleport");
+
     private void Awake()
     {
         _teleporter = FindObjectOfType<Teleporter>();
@@ -45,8 +47,10 @@ public class HandTeleporter : MonoBehaviour
         UpdateArc();
         if (SteamVR_Actions.default_Teleport[SteamVR_Input_Sources.RightHand].stateDown && _isArcTargetValid)
         {
+            _log.Append("isTeleporting", true);
             _teleporter.Teleport(_teleportMarker.transform.position);
         }
+        _log.CommitLine();
     }
 
     private void UpdateArc()
@@ -74,12 +78,16 @@ public class HandTeleporter : MonoBehaviour
             _arc.SetColor(Color.green);
 
             _teleportMarker.transform.position = hit.point;
+            _log.Append("origTarget", hit.point);
+
             Vector3 markerPos;
             if (_markerCollider.HasCollided())
             {
                 markerPos = _markerCollider.GetAdjustedPosition();
                 markerPos.y = hit.point.y;
                 _teleportMarker.transform.position = markerPos;
+
+                _log.Append("shiftedTarget", markerPos);
             }
 
             _teleportMarker.SetAlpha(1f, 1f);
@@ -90,8 +98,10 @@ public class HandTeleporter : MonoBehaviour
             _arc.SetColor(Color.red);
             _teleportMarker.SetAlpha(0f, 0f);
             _isArcTargetValid = false;
+
         }
         _arc.Show();
+        _log.Append("targetValid", _isArcTargetValid);
     }
 
 }

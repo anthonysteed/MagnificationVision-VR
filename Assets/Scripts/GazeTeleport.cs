@@ -36,6 +36,8 @@ public class GazeTeleport : MonoBehaviour
 
     private float _holdDownTime = 0f;
 
+    private BufferedLogger _log = new BufferedLogger("GazeTeleport");
+
     private void Awake()
     {
         _teleporter = FindObjectOfType<Teleporter>();
@@ -62,6 +64,8 @@ public class GazeTeleport : MonoBehaviour
         bool isTargetValid = IsTeleportTargetValid();
         _dotImage.SetValid(isTargetValid);
 
+        _log.Append("targetValid", isTargetValid);
+
         SteamVR_Action_Boolean_Source triggerDown = SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand];
         if (triggerDown.state && !_teleporter.IsTeleporting)
         {
@@ -82,6 +86,8 @@ public class GazeTeleport : MonoBehaviour
             _dotImage.SetProgress(_holdDownTime / _activationTime);
             if (_holdDownTime >= _activationTime)
             {
+                _log.Append("isTeleporting", true);
+
                 // Start teleport
                 _teleporter.Teleport(_teleportCandidate.Value);
                 OnGazeTeleport(_teleportCandidate.Value);
@@ -99,6 +105,7 @@ public class GazeTeleport : MonoBehaviour
             _teleportMarker.SetAlpha(0f, 0f);
             _dotImage.SetProgress(1f);
         }
+        _log.CommitLine();
     }
 
     private void SetMarkerPosition()
@@ -127,6 +134,8 @@ public class GazeTeleport : MonoBehaviour
     private void SetTeleportTarget()
     {
         Vector3 target = _gazeMag.LastGazePos;
+        _log.Append("origTarget", target);
+
         target.y = 0f;
         _teleportMarker.transform.position = target;
 
@@ -135,6 +144,7 @@ public class GazeTeleport : MonoBehaviour
             target = _markerCollider.GetAdjustedPosition();
         }
         _teleportMarker.transform.position = target;
+        _log.Append("shiftedTarget", target);
 
         _teleportCandidate = target;
     }

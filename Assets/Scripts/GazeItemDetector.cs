@@ -9,20 +9,33 @@ public class GazeItemDetector : MonoBehaviour
 
     private MagnificationManager _magManager;
 
+    private WorldGazeTracker _worldGaze;
+
     private GazeMagnifier _gazeMagnifier;
+
+    private HiddenItem[] _allItems;
 
     private HiddenItem _gazedAtItem;
 
-    private Queue<Collider> _gazeCandidates;
+    private Camera _playerCam;
+
+    private Camera _magRectCam;
 
     private bool _isDiscoveryPending = false;
 
     private float _timeGazed = 0f;
 
+    private BufferedLogger _log = new BufferedLogger("Items");
+
     private void Awake()
     {
         _magManager = FindObjectOfType<MagnificationManager>();
         _gazeMagnifier = FindObjectOfType<GazeMagnifier>();
+        _worldGaze = FindObjectOfType<WorldGazeTracker>();
+        _allItems = FindObjectsOfType<HiddenItem>();
+
+        _playerCam = Camera.main;
+        _magRectCam = _magManager.GetComponentInChildren<Camera>();
     }
 
     // Or null
@@ -36,10 +49,11 @@ public class GazeItemDetector : MonoBehaviour
         }
         else
         {
-            // Check normal gaze ray
-            gazePos = _magManager.LastWorldGazePos;
+            // Check regular gaze ray
+            gazePos = _worldGaze.GazePos;
         }
         
+        // Check all objects in 0.2m radius of gaze point
         Collider[] collidersSeen = Physics.OverlapSphere(gazePos, 0.2f);
         foreach (Collider col in collidersSeen)
         {
@@ -53,11 +67,49 @@ public class GazeItemDetector : MonoBehaviour
         return null;
     }
 
+    private bool InViewOf(Vector3 point, Camera cam)
+    {
+        const int layerMask = ~((1 << 9) | (1 << 10) | (1 << 11) | (1 << 13));
 
+        // Check if inside camera's viewport
+        Vector3 vp = _playerCam.WorldToViewportPoint(point);
+        if (vp.x < 1 && vp.x > 0 && vp.y < 1 && vp.y > 0 && vp.y < 1 && vp.z > 0)
+        {
+            // Check that nothing is in the way
+            if (!Physics.Linecast(_playerCam.transform.position, point, layerMask))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void CheckFov()
+    {
+        foreach (HiddenItem item in _allItems)
+        {
+            if (item.Found)
+            {
+                continue;
+            }
+            
+            if (InViewOf(item.transform.position, _playerCam))
+            {
+                Debug.Log(item.ItemType + " visible to player");
+                _log.Append(item.ItemType + "_inPlayerFov", true);
+            }
+            if (InViewOf(item.transform.position, _magRectCam))
+            {
+                Debug.Log(item.ItemType + " visible through rect");
+                _log.Append(item.ItemType + "_inRectFov", true);
+            }
+        }
+    }
 
 
     private void Update()
     {
+        CheckFov();
         HiddenItem item = GetCurrentGazedAtItem();   
 
         if (_isDiscoveryPending)
@@ -74,6 +126,8 @@ public class GazeItemDetector : MonoBehaviour
                 {
                     _gazedAtItem.Discover();
                     _isDiscoveryPending = false;
+
+                    _log.Append(item.ItemType + "_discovered", true);
                 }
             }
         }
@@ -82,8 +136,11 @@ public class GazeItemDetector : MonoBehaviour
             _gazedAtItem = item;
             _timeGazed = 0f;
             _isDiscoveryPending = true;
+
+            _log.Append(item.ItemType + "_firstSpotted", true);
         }
 
+        _log.CommitLine();
     }
 
 

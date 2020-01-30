@@ -54,7 +54,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
     private bool _isMagActive = false;
 
-    private MagnificationManager _magManager;
+    private WorldGazeTracker _gazeTracker;
 
     private Transform _gazeDot;
 
@@ -69,6 +69,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     private bool _isTeleporting = false;
 
     private float _lastMagnification = 1f;
+
+    private BufferedLogger _log = new BufferedLogger("GazeMag");
 
     private void OnEnable()
     {
@@ -85,7 +87,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     private void Awake()
     {
         _magRect = GameObject.FindGameObjectWithTag("MagRect").transform;
-        _magManager = GetComponent<MagnificationManager>();
+        _gazeTracker = FindObjectOfType<WorldGazeTracker>();
         _player = Camera.main.transform;
 
         _timeAtLastSample = Time.time;
@@ -117,17 +119,19 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
         for (int i = 0; i < _numFramesToSample; i++)
         {
-            _sampledPoints[i] = toWorldGaze ? _magManager.LastWorldGazePos : _gazeDot.position;
+            _sampledPoints[i] = toWorldGaze ? _gazeTracker.GazePos : _gazeDot.position;
         }
 
         Vector3 eyeBallsPos = TobiiXR.EyeTrackingData.GazeRay.Origin;
-        float gazeDistEstimate = Vector3.Distance(eyeBallsPos, _magManager.LastWorldGazePos) / 2f;
+        float gazeDistEstimate = Vector3.Distance(eyeBallsPos, _gazeTracker.GazePos) / 2f;
         for (int i = 0; i < _numInertialFramesToSample; i++)
         {
             _sampledDistances[i] = toWorldGaze ? gazeDistEstimate : 0f;
         }
 
         _oldAverageDist = toWorldGaze ? gazeDistEstimate : 0f;
+
+        _log.Append("didReset", true);
     }
 
     private void OnGazeTeleport(Vector3 destination)
@@ -162,6 +166,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
             return _lastMagnification;
         }
 
+        _log.Append("active", true);
         Vector3 gazeSceenPos = gazePoint.textureCoord;
         Ray magRay = _magCamera.ViewportPointToRay(gazeSceenPos);
 
@@ -169,11 +174,13 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         if (Physics.Raycast(magRay, out RaycastHit hit, _gazeRange, _layerMask))
         {
             hitPos = hit.point;
+            _log.Append("curFrameGazePos", hitPos);
         }
         else
         {
             Debug.Log("Looking outside range");
             hitPos = gazePoint.point + (magRay.direction * _gazeRange);
+            _log.Append("outsideRange", true);
         }
 
         _sampledPoints[_frameIndex] = hitPos;
@@ -186,8 +193,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
             dotPos += _sampledPoints[i];
             i = (i + 1) % _numFramesToSample;
         }
-
         dotPos /= _numFramesToSample;
+        _log.Append("dotPos", dotPos);
 
         _gazeDot.position = dotPos - (0.1f * magRay.direction);
         _gazeDot.rotation = Quaternion.LookRotation(_player.forward, _player.up);
@@ -201,6 +208,8 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
         _timeAtLastSample = Time.time;
         _lastMagnification = magnification;
+
+        _log.CommitLine();
         return magnification;
     }
 
@@ -208,6 +217,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
     private float GetWeightedAverageDist(float currentDist)
     {
         Debug.Assert(_inertialFrameIndex >= 0 && _inertialFrameIndex < _numInertialFramesToSample);
+        _log.Append("curDotDist", currentDist);
 
         _sampledDistances[_inertialFrameIndex] = currentDist;
         _inertialFrameIndex = (_inertialFrameIndex + 1) % _numInertialFramesToSample;
@@ -226,6 +236,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         averageDist = (averageDist * _sampleAlpha) + ((1 - _sampleAlpha) * _oldAverageDist);
         _oldAverageDist = averageDist;
 
+        _log.Append("avgDotDist", averageDist);
         return averageDist;
     }
 
