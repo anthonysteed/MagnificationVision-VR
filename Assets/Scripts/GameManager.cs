@@ -9,6 +9,9 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Animator[] _doorAnimators;
 
+    [SerializeField]
+    private bool DEBUG_TUTORIAL_END = false;
+
     private void Awake()
     {
         if (Instance != null)
@@ -18,18 +21,25 @@ public class GameManager : MonoBehaviour
         Instance = this;
 
         TutorialSign.OnTutorialComplete += OnTutorialComplete;
-        Debug.Log("GameManager awake called");
     }
 
     private void OnTutorialComplete()
     {
-        Debug.Log("GameManager registered tutorial complete");
         foreach (Animator animator in _doorAnimators)
         {
             animator.SetTrigger("openTrigger");
         }
 
         TutorialSign.OnTutorialComplete -= OnTutorialComplete;
+    }
+
+    private void OnValidate()
+    {
+        if (DEBUG_TUTORIAL_END)
+        {
+            DEBUG_TUTORIAL_END = false;
+            OnTutorialComplete();
+        }
     }
 
 

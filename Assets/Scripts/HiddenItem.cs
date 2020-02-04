@@ -28,6 +28,11 @@ public class HiddenItem : MonoBehaviour
         _particles = GetComponentInChildren<ParticleSystem>();
     }
 
+    private void Start()
+    {
+        WorldConfig.Instance.SetPosition(transform, _type);
+    }
+
     public void Discover()
     {
         if (_hasBeenDiscovered)
