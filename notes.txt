@@ -1,14 +1,5 @@
 # TO-DO:
 	
-
-* item images for checklist
-* 
-* prepare scene:
-	* ensure all objects have reasonably sized colliders
-	* victory screen?
-	* lock off tutorial area until trigger
-	
-	
-	
-## THINGS TO LOG:
-* whether object was found though magRect or with direct unaided gaze
+* create tutorial room with numbered signs
+* create 2 new item placements
+* create "gameManager" to set item in different placements + swap magnification configurations 
