@@ -12,7 +12,7 @@ public class MagnificationManager : MonoBehaviour
 {
     public bool IsMagnifying { get { return _isActive; } }
 
-    public enum MagnificationMode { NATURAL, GAZE, COMBINED }
+    public enum MagnificationMode { NATURAL, GAZE, COMBINED, NONE }
 
     [SerializeField]
     private MagnificationMode _mode;
@@ -159,11 +159,11 @@ public class MagnificationManager : MonoBehaviour
         {
             UpdateRectDimensions();
             FindGazeRectIntersection();
-            if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 0.7f)
+            if (_gazeRectIntersection.HasValue && !_isActive && !_handTeleporter.IsArcActive && !_checklist.IsVisible && _handDistance <= 0.5f)
             {
                 ToggleMagnification(true);
             }
-            else if (_isActive && (!_gazeRectIntersection.HasValue || _handTeleporter.IsArcActive || _checklist.IsVisible || _handDistance > 0.7f))
+            else if (_isActive && (!_gazeRectIntersection.HasValue || _handTeleporter.IsArcActive || _checklist.IsVisible || _handDistance > 0.5f))
             {
                 ToggleMagnification(false);
             }
@@ -172,7 +172,16 @@ public class MagnificationManager : MonoBehaviour
         UpdateCameraTransform();
         if (_isActive && !_gazeTeleport.IsTeleportPending)
         {
-            float magnification = _magnifier.GetMagnification(_gazeRectIntersection.Value, _planeNormal);
+            float magnification;
+            if (_mode == MagnificationMode.NONE)
+            {
+                magnification = 1f;
+            }
+            else
+            {
+                magnification = _magnifier.GetMagnification(_gazeRectIntersection.Value, _planeNormal);
+            }
+
             _log.Append("magFactor", magnification);
             _magCamera.fieldOfView = _standardFov / magnification;
         }
