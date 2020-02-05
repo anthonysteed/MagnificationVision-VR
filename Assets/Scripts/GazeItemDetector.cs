@@ -39,22 +39,10 @@ public class GazeItemDetector : MonoBehaviour
     }
 
     // Or null
-    private HiddenItem GetCurrentGazedAtItem()
+    private HiddenItem GetItemAtPoint(Vector3 pos)
     {
-        Vector3 gazePos;
-        if (_magManager.IsMagnifying)
-        {
-            // Check gaze ray through MagRect
-            gazePos = _gazeMagnifier.LastGazePos;
-        }
-        else
-        {
-            // Check regular gaze ray
-            gazePos = _worldGaze.GazePos;
-        }
-        
         // Check all objects in 0.2m radius of gaze point
-        Collider[] collidersSeen = Physics.OverlapSphere(gazePos, 0.2f);
+        Collider[] collidersSeen = Physics.OverlapSphere(pos, 0.2f);
         foreach (Collider col in collidersSeen)
         {
             HiddenItem item = col.GetComponent<HiddenItem>();
@@ -65,6 +53,19 @@ public class GazeItemDetector : MonoBehaviour
         }
 
         return null;
+    }
+
+    // Or null
+    private HiddenItem GetCurrentGazedAtItem()
+    {
+        // Check regular gaze ray
+        HiddenItem item =  GetItemAtPoint(_worldGaze.GazePos);
+        if (item == null && _magManager.IsMagnifying)
+        {
+            // Check gaze ray through MagRect
+            item = GetItemAtPoint(_gazeMagnifier.LastGazePos);
+        }
+        return item;       
     }
 
     private bool InViewOf(Vector3 point, Camera cam)
@@ -98,7 +99,7 @@ public class GazeItemDetector : MonoBehaviour
                 Debug.Log(item.ItemType + " visible to player");
                 _log.Append(item.ItemType + "_inPlayerFov", true);
             }
-            if (InViewOf(item.transform.position, _magRectCam))
+            if (_magManager.IsMagnifying && InViewOf(item.transform.position, _magRectCam))
             {
                 Debug.Log(item.ItemType + " visible through rect");
                 _log.Append(item.ItemType + "_inRectFov", true);

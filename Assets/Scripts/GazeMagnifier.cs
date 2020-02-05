@@ -96,7 +96,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
 
         _magCamera = _magRect.GetComponentInChildren<Camera>();
 
-        _numInertialFramesToSample = _numFramesToSample * 3;
+        _numInertialFramesToSample = _numFramesToSample * 4;
 
         _sampledPoints = new Vector3[_numFramesToSample];
         _sampledDistances = new float[_numInertialFramesToSample];

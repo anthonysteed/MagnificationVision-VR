@@ -64,8 +64,8 @@ public class WorldConfig : MonoBehaviour
                         item.rotation = Quaternion.Euler(0f, -0.108f, 0f);
                         break;
                     case HiddenItem.Type.BROKEN_BOTTLE:
-                        item.position = new Vector3(1.345f, 0.109f, -15.132f);
-                        item.rotation = Quaternion.Euler(-14.875f, -95.593f, 85.87901f);
+                        item.position = new Vector3(-5.976f, 1.19f, -26.372f);
+                        item.rotation = Quaternion.Euler(23.433f, -220.234f, -16.476f);
                         break;
                     case HiddenItem.Type.BROWN_CHEESE:
                         item.position = new Vector3(7.058f, 0.797f, -15.881f);
@@ -81,8 +81,8 @@ public class WorldConfig : MonoBehaviour
                 switch (type)
                 {
                     case HiddenItem.Type.PINEAPPLE_PIZZA:
-                        item.position = new Vector3(-9.294f, 0.806f, -0.558f);
-                        item.rotation = Quaternion.Euler(-175.59f, 276.238f, 109.568f);
+                        item.position = new Vector3(-4.396f, 1.074f, -8.886f);
+                        item.rotation = Quaternion.Euler(-180f, 308.005f, 180f);
                         break;
                     case HiddenItem.Type.BROWN_CHEESE:
                         item.position = new Vector3(6.732431f, 0.4201571f, -32.80882f);
