@@ -1,5 +1,2 @@
 # TO-DO:
-	
-* create tutorial room with numbered signs
-* create 2 new item placements
-* create "gameManager" to set item in different placements + swap magnification configurations 
+
