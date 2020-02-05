@@ -1,0 +1,28 @@
+# Primary evolution
+
+* How to do magnification/zoom?
+* Moving camera back and forth?
+	* No, that was shitty
+* Adjusting FOV?
+	* Yes, but this was fiddly (there was a small window of viable zoom -- going above or below that level was insane)
+* Deep-dive into optics of magnifying glasses
+* Created natural hand-based magnification based on natural equations
+* Attempted to do eye-based magnification -- this required detour into geometry
+	* Find Gaze-Rect intersection, then rect-object intersection
+	* Very fiddly at first, and experimented with finding ways to aggregate gaze data over time (single-frame eye movements are not accurate)
+	* Settled on a variation on 
+* Implemented traditional hand-based teleportation, but realised it distracted from the main task
+* So, created a gaze-based teleportation system
+	* Details on adjusting for colliders + penetration vectors
+	* Follow dot, and mark teleport destination with TeleportMarker
+	* Tried having zoom effect to show transition to new location, but this induced motion sickness (in me, anyway)
+* Logging system
+
+
+
+## Extra tweaks
+* To synchronise the current zoom level with the item the user is actually targeting (when looking around normally), we also buffer gaze-ray intersections in a similar moving-average way all the time, so that the moment the user looks at the Rect the zoom distance is calibrated to what they were looking at before zooming began
+* This technique relies heavily on Unity collision system (everything needs to have a collider that matches its physical shape for ray intersections to work), and gaze targets cannot be occluded by other colliders
+	* So, in this setup, careful structuring of scene was required
+
+
