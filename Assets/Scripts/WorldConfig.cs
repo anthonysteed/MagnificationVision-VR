@@ -31,8 +31,8 @@ public class WorldConfig : MonoBehaviour
                 switch (type)
                 {
                     case HiddenItem.Type.BROWN_CHEESE:
-                        item.position = new Vector3(-8.293f, 0.759f, 1.421f);
-                        item.rotation = Quaternion.Euler(0f, 407.941f, 0f);
+                        item.position = new Vector3(1.767f, 0.4242516f, -21.158f);
+                        item.rotation = Quaternion.Euler(2.316f, 536.898f, 0f);
                         break;
                     case HiddenItem.Type.BROKEN_BOTTLE:
                         item.position = new Vector3(3.935f, 0.807f, -9.871f);
@@ -103,6 +103,22 @@ public class WorldConfig : MonoBehaviour
                 }
                 break;
         }
+
+    }
+
+    private void OnValidate()
+    {
+        if (Application.isPlaying)
+        {
+            return;
+        }
+
+        HiddenItem[] items = FindObjectsOfType<HiddenItem>();
+        foreach (HiddenItem item in items)
+        {
+            SetPosition(item.transform, item.ItemType);
+        }
+
     }
 
 

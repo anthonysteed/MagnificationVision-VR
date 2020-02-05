@@ -30,7 +30,7 @@ public class TutorialSign : MonoBehaviour
         if (s_NextSign == _number)
         {
             float distToPlayer = Vector3.Distance(_player.position, transform.position);
-            if (distToPlayer < 2f)
+            if (distToPlayer < 2.2f)
             {
                 Complete();
             }
