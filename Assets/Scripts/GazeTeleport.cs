@@ -36,6 +36,8 @@ public class GazeTeleport : MonoBehaviour
 
     private float _holdDownTime = 0f;
 
+    private bool _isHoldingTrigger = false;
+
     private BufferedLogger _log = new BufferedLogger("GazeTeleport");
 
     private void Awake()
@@ -67,38 +69,45 @@ public class GazeTeleport : MonoBehaviour
         _log.Append("targetValid", isTargetValid);
 
         SteamVR_Action_Boolean_Source triggerDown = SteamVR_Actions.default_GrabPinch[SteamVR_Input_Sources.RightHand];
-        if (triggerDown.state && !_teleporter.IsTeleporting)
+        if (triggerDown.stateDown && !_teleporter.IsTeleporting)
         {
-            if (!_teleportCandidate.HasValue)
+            if (isTargetValid)
             {
-                if (isTargetValid)
-                {
-                    SetTeleportTarget();
-                    _teleportMarker.SetAlpha(1f, 1f);
-                }
-                else
-                {
-                    _teleportMarker.SetAlpha(0f, 0f);
-                    return;
-                }
+                _isHoldingTrigger = true;
+                _holdDownTime = 0f;
+
+                SetTeleportTarget();
+                _teleportMarker.SetAlpha(1f, 1f);
             }
+            else
+            {
+                _teleportCandidate = null;
+                _teleportMarker.SetAlpha(0f, 0f);
+                _log.CommitLine();
+                return;
+            }
+        }
+        if (triggerDown.stateUp)
+        {
+            _isHoldingTrigger = false;
+            _teleportCandidate = null;
+            _teleportMarker.SetAlpha(0f, 0f);
+        }
+
+        if (_isHoldingTrigger)
+        {
             _holdDownTime += Time.deltaTime;
             _dotImage.SetProgress(_holdDownTime / _activationTime);
             if (_holdDownTime >= _activationTime)
             {
+                _isHoldingTrigger = false;
                 _log.Append("isTeleporting", true);
 
                 // Start teleport
                 _teleporter.Teleport(_teleportCandidate.Value);
                 OnGazeTeleport(_teleportCandidate.Value);
                 _teleportCandidate = null;
-                _holdDownTime = 0f;
             }
-        }
-        else if (_teleportCandidate.HasValue)
-        {
-            _teleportCandidate = null;
-            _holdDownTime = 0f;
         }
         else
         {

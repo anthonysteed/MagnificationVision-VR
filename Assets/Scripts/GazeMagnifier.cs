@@ -163,6 +163,7 @@ public class GazeMagnifier : MonoBehaviour, IMagnifier
         }
         if (_isTeleporting)
         {
+            _log.CommitLine();
             return _lastMagnification;
         }
 

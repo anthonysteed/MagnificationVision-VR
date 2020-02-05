@@ -19,6 +19,8 @@ public class TutorialSign : MonoBehaviour
 
     private LerpAlpha _fadeEffect;
 
+    private BufferedLogger _log = new BufferedLogger("Tutorial");
+
     private void Awake()
     {
         _player = Camera.main.transform;
@@ -46,6 +48,9 @@ public class TutorialSign : MonoBehaviour
         s_NextSign++;
         _fadeEffect.FadeWithEmission();
         enabled = false;
+
+        _log.Append("complete", true);
+        _log.CommitLine();
         Destroy(gameObject, 2f);
     }
 
