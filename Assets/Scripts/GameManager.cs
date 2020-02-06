@@ -5,6 +5,17 @@ using Valve.VR;
 
 public class GameManager : MonoBehaviour
 {
+    [System.Serializable]
+    private class Sounds
+    {
+        public AudioClip GameStart;
+        public AudioClip DoorOpen;
+        public AudioClip DoorShut;
+        public AudioClip TutorialEnd;
+        public AudioClip ItemFound;
+        public AudioClip GameOver;
+    }
+
     public static GameManager Instance { get; private set; }
 
     [SerializeField]
@@ -15,6 +26,9 @@ public class GameManager : MonoBehaviour
 
     [SerializeField]
     private Animator[] _doorAnimators;
+    
+    [SerializeField]
+    private Sounds _sounds;
 
     [SerializeField]
     private bool _skipTutorial = false;
@@ -24,7 +38,7 @@ public class GameManager : MonoBehaviour
 
     private Teleporter _teleporter;
 
-    private AudioSource _successAudio;
+    private AudioSource _audioSource;
 
     private int _numItemsFound = 0;
 
@@ -41,7 +55,7 @@ public class GameManager : MonoBehaviour
         Instance = this;
 
         _teleporter = FindObjectOfType<Teleporter>();
-        _successAudio = GetComponent<AudioSource>();
+        _audioSource = GetComponent<AudioSource>();
 
         TutorialSign.OnTutorialComplete += OnTutorialComplete;
         HiddenItem.OnItemFound += OnItemFound;
@@ -51,6 +65,9 @@ public class GameManager : MonoBehaviour
     {
         Vector3 dest = _skipTutorial ? _gameStartPos : _tutorialStartPos;
         _teleporter.Teleport(dest);
+
+        _audioSource.clip = _sounds.GameStart;
+        _audioSource.Play();
     }
 
     private void OnTutorialComplete()
@@ -59,6 +76,8 @@ public class GameManager : MonoBehaviour
         {
             animator.SetTrigger("openTrigger");
         }
+        _audioSource.clip = _sounds.DoorOpen;
+        _audioSource.Play();
 
         TutorialSign.OnTutorialComplete -= OnTutorialComplete;
 
@@ -73,6 +92,8 @@ public class GameManager : MonoBehaviour
         {
             _itemsFound.Add(type);
             _numItemsFound++;
+            _audioSource.clip = _sounds.ItemFound;
+            _audioSource.Play();
 
             if (_numItemsFound == 5)
             {
@@ -86,20 +107,26 @@ public class GameManager : MonoBehaviour
     private IEnumerator EndTutorial()
     {
         yield return new WaitForSeconds(2f);
+        
         _teleporter.Teleport(_gameStartPos);
+        _audioSource.clip = _sounds.TutorialEnd;
+        _audioSource.Play();
         yield return new WaitForSeconds(2f);
 
         foreach (Animator animator in _doorAnimators)
         {
             animator.SetTrigger("closeTrigger");
         }
+        _audioSource.clip = _sounds.DoorShut;
+        _audioSource.Play();
     }
 
     private IEnumerator EndGame()
     {
-        yield return new WaitForSeconds(1f);
-        _successAudio.Play();
-        yield return new WaitForSeconds(_successAudio.clip.length);
+        yield return new WaitForSeconds(2f);
+        _audioSource.clip = _sounds.GameOver;
+        _audioSource.Play();
+        yield return new WaitForSeconds(_audioSource.clip.length);
 
         SteamVR_Fade.Start(Color.white, 6f, true);
     }

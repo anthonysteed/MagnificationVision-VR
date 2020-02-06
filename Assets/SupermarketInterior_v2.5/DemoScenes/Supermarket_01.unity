@@ -35271,6 +35271,13 @@ MonoBehaviour:
   _doorAnimators:
   - {fileID: 602168020}
   - {fileID: 602168019}
+  _sounds:
+    GameStart: {fileID: 8300000, guid: b4d28eec3b369264e9a921608935724f, type: 3}
+    DoorOpen: {fileID: 8300000, guid: 91e5a8dc13fbaa849bfe33c980f19812, type: 3}
+    DoorShut: {fileID: 8300000, guid: e143a080966f0e741aa25a02d26b2fde, type: 3}
+    TutorialEnd: {fileID: 8300000, guid: 097acd349c4a15c438a4d6a62e999cb7, type: 3}
+    ItemFound: {fileID: 8300000, guid: 8b83db87eb372e54b987b660880dbf7c, type: 3}
+    GameOver: {fileID: 8300000, guid: 7a41612e243c7de46a41cf69d70aba58, type: 3}
   _skipTutorial: 0
   DEBUG_TUTORIAL_END: 0
 --- !u!114 &987390502
@@ -35296,7 +35303,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 8b83db87eb372e54b987b660880dbf7c, type: 3}
+  m_audioClip: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
