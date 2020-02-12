@@ -14,6 +14,8 @@ public class MagnificationManager : MonoBehaviour
 
     public enum MagnificationMode { NATURAL, GAZE, COMBINED, NONE }
 
+    public MagnificationMode Mode { get { return _mode; } }
+
     [SerializeField]
     private MagnificationMode _mode;
 
@@ -89,6 +91,7 @@ public class MagnificationManager : MonoBehaviour
                 _magnifier = GetComponent<NaturalMagnifier>();
                 break;
             case MagnificationMode.GAZE:
+            case MagnificationMode.NONE:
                 _magnifier = GetComponent<GazeMagnifier>();
                 break;
             case MagnificationMode.COMBINED:
@@ -175,6 +178,7 @@ public class MagnificationManager : MonoBehaviour
             float magnification;
             if (_mode == MagnificationMode.NONE)
             {
+                _magnifier.GetMagnification(_gazeRectIntersection.Value, _planeNormal);
                 magnification = 1f;
             }
             else

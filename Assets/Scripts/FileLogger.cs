@@ -27,7 +27,8 @@ public class FileLogger : MonoBehaviour
             dir.Create();
         }
 
-        _logWriter = File.CreateText(FOLDER_PATH + System.DateTime.Now.ToString("yyyy-MM-dd_THH-mm-ss") + ".txt");
+        _logWriter = File.CreateText(FOLDER_PATH + System.DateTime.Now.ToString("yyyy-MM-dd_THH-mm-ss") + ".json");
+        _logWriter.WriteLine('{');
     }
 
     private void Awake()
@@ -46,16 +47,24 @@ public class FileLogger : MonoBehaviour
 
     private void LateUpdate()
     {
-        _logWriter.WriteLine("# frame " + Time.frameCount + ", time " + Time.time);
+        _logWriter.WriteLine("\"frame-" + Time.frameCount + "\":");
+        _logWriter.WriteLine("{");
+        _logWriter.WriteLine("\"time\":" + Time.time +",");
         while (_logQ.Count > 0)
         {
-            _logWriter.WriteLine(_logQ.Dequeue());
+            _logWriter.Write(_logQ.Dequeue());
+            if (_logQ.Count > 0)
+            {
+                _logWriter.WriteLine(",");
+            }
         }
-        _logWriter.WriteLine();
+        _logWriter.WriteLine("},");
     }
 
     private void OnDisable()
     {
+        _logWriter.WriteLine("\"END\": 1");
+        _logWriter.WriteLine("}");
         _logWriter.Dispose();
     }
 

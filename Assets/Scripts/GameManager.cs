@@ -126,7 +126,7 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(2f);
         _audioSource.clip = _sounds.GameOver;
         _audioSource.Play();
-        yield return new WaitForSeconds(_audioSource.clip.length);
+        yield return new WaitForSeconds(2f);
 
         SteamVR_Fade.Start(Color.white, 6f, true);
     }
