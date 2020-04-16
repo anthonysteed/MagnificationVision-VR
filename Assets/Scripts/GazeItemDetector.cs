@@ -77,7 +77,7 @@ public class GazeItemDetector : MonoBehaviour
         if (vp.x < 1 && vp.x > 0 && vp.y < 1 && vp.y > 0 && vp.y < 1 && vp.z > 0)
         {
             // Check that nothing is in the way
-            if (!Physics.Linecast(_playerCam.transform.position, point, layerMask))
+            if (!Physics.Linecast(cam.transform.position, point, layerMask))
             {
                 return true;
             }
