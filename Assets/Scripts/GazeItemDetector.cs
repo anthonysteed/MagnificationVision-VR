@@ -73,7 +73,7 @@ public class GazeItemDetector : MonoBehaviour
         const int layerMask = ~((1 << 9) | (1 << 10) | (1 << 11) | (1 << 13));
 
         // Check if inside camera's viewport
-        Vector3 vp = _playerCam.WorldToViewportPoint(point);
+        Vector3 vp = cam.WorldToViewportPoint(point);
         if (vp.x < 1 && vp.x > 0 && vp.y < 1 && vp.y > 0 && vp.y < 1 && vp.z > 0)
         {
             // Check that nothing is in the way

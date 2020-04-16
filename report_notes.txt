@@ -10,6 +10,7 @@
 * Attempted to do eye-based magnification -- this required detour into geometry
 	* Find Gaze-Rect intersection, then rect-object intersection
 	* Very fiddly at first, and experimented with finding ways to aggregate gaze data over time (single-frame eye movements are not accurate)
+	* Extremely difficult to debug: Cannot look at debug text without altering behaviour
 	* Settled on a variation on 
 * Implemented traditional hand-based teleportation, but realised it distracted from the main task
 * So, created a gaze-based teleportation system
